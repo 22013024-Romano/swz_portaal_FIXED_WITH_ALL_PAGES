@@ -1,0 +1,1 @@
+app_data = {'is_authenticated': False, 'current_user': None, 'df': None, 'graph': None}

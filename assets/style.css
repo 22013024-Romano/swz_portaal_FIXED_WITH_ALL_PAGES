@@ -1,0 +1,33 @@
+@font-face {
+    font-family: 'RijksoverheidSansText';
+    src: url('/assets/RijksoverheidSansText-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'RijksoverheidSansText';
+    src: url('/assets/RijksoverheidSansText-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Pas het lettertype toe op de hele applicatie */
+body {
+    font-family: 'RijksoverheidSansText', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    color: #154273;
+}
+
+h1, h2, h3, h4 {
+    color: #CA005D;
+}
+
+button, .dash-dropdown {
+    border-radius: 5px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+}
