@@ -7,16 +7,6 @@ from app_data import app_data  # Controleer de authenticatiestatus
 def layout(app):
     return html.Div([
         html.H2("🖼️ Galerij"),
-        html.Div(
-            children=[
-                html.Button(
-                    "Uitloggen",
-                    id="logout-button",
-                    style={"marginBottom": "10px", "display": "block"} if app_data['is_authenticated'] else {"display": "none"}
-                )
-            ],
-            style={"textAlign": "right"}
-        ),
         dcc.Input(
             id="search-input",
             type="text",
@@ -27,10 +17,7 @@ def layout(app):
     ])
 
 def register_callbacks(app):
-    @app.callback(
-        Output('url', 'pathname'),
-        Input('logout-button', 'n_clicks')
-    )
+    
     def logout_user(n_clicks):
         if n_clicks:
             # Zet de authenticatiestatus op False

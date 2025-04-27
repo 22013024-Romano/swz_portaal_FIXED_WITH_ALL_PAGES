@@ -6,10 +6,10 @@ import dash
 def create_layout(app):
     return html.Div(
         style={
-            "backgroundColor": "white",  # Witte achtergrond
-            "color": "black",  # Zwarte tekstkleur voor leesbaarheid
-            "minHeight": "100vh",  # Zorg dat de achtergrond de volledige hoogte bedekt
-            "fontFamily": "Arial, sans-serif",  # Professioneel lettertype
+            "backgroundColor": "white",
+            "color": "black",
+            "minHeight": "100vh",
+            "fontFamily": "Arial, sans-serif",
             "display": "flex",
             "flexDirection": "column"
         },
@@ -20,9 +20,9 @@ def create_layout(app):
                     html.Div(
                         children=[
                             html.Img(
-                                src="/assets/logo.png",  # Zorg dat je logo in de 'assets'-map staat
+                                src="/assets/logo.png",
                                 style={
-                                    "height": "80px",  # Pas de hoogte van het logo aan
+                                    "height": "80px",
                                     "marginRight": "20px"
                                 }
                             ),
@@ -33,7 +33,7 @@ def create_layout(app):
                                     "verticalAlign": "middle",
                                     "margin": "0",
                                     "fontSize": "28px",
-                                    "color": "white"  # Witte tekst in de header
+                                    "color": "white"
                                 }
                             )
                         ],
@@ -46,28 +46,53 @@ def create_layout(app):
                         }
                     )
                 ],
-                style={"backgroundColor": "#CA005D"}  # Robijnrode header
+                style={"backgroundColor": "#CA005D"}
             ),
             # Navigatiebalk
             html.Nav(
                 children=[
-                    dcc.Link("🏠 Galerij", href="/", style={"marginRight": "20px", "color": "#CA005D", "textDecoration": "none"}),
-                    dcc.Link("📊 Dashboard", href="/dashboard", style={"marginRight": "20px", "color": "#CA005D", "textDecoration": "none"}),
-                    dcc.Link(
-                        "🔐 Login",
-                        href="/login",
-                        style={
-                            "marginRight": "20px",
-                            "color": "#CA005D",
-                            "textDecoration": "none"
-                        }
+                    html.Div(
+                        children=[
+                            dcc.Link("🏠 Galerij", href="/", style={"marginRight": "20px", "color": "#CA005D", "textDecoration": "none"}),
+                            dcc.Link("📊 Dashboard", href="/dashboard", style={"marginRight": "20px", "color": "#CA005D", "textDecoration": "none"}),
+                            dcc.Link(
+                                "🔐 Login",
+                                href="/login",
+                                style={
+                                    "marginRight": "20px",
+                                    "color": "#CA005D",
+                                    "textDecoration": "none"
+                                }
+                            ),
+                        ],
+                        style={"display": "inline-block"}
+                    ),
+                    html.Div(
+                        children=[
+                            html.Button(
+                                "Uitloggen",
+                                id="logout-button",
+                                style={
+                                    "backgroundColor": "#CA005D",
+                                    "color": "white",
+                                    "border": "none",
+                                    "borderRadius": "5px",
+                                    "padding": "5px 10px",
+                                    "cursor": "pointer",
+                                    "display": "none",  # Standaard verborgen
+                                    "marginRight": "20px"  # Voeg ruimte toe aan de rechterkant
+                                }
+                            )
+                        ],
+                        style={"display": "inline-block", "float": "right"}
                     )
                 ],
                 style={
                     "textAlign": "center",
                     "padding": "10px 0",
                     "borderBottom": "1px solid #CA005D",
-                    "fontSize": "18px"
+                    "fontSize": "18px",
+                    "overflow": "hidden"
                 }
             ),
             # Pagina-inhoud
@@ -76,20 +101,20 @@ def create_layout(app):
                     dcc.Location(id="url", refresh=False),
                     html.Div(id="page-content", style={"padding": "20px"})
                 ],
-                style={"flex": "1"}  # Zorg dat de inhoud de resterende ruimte vult
+                style={"flex": "1"}
             ),
             # Footer
             html.Footer(
                 children=[
                     html.P(
                         "© 2025 Data Visualisatie Portaal. Alle rechten voorbehouden.",
-                        style={"margin": "0", "fontSize": "14px", "color": "white"}  # Witte tekst in de footer
+                        style={"margin": "0", "fontSize": "14px", "color": "white"}
                     )
                 ],
                 style={
                     "textAlign": "center",
                     "padding": "10px",
-                    "backgroundColor": "#CA005D",  # Robijnrode footer
+                    "backgroundColor": "#CA005D",
                     "borderTop": "2px solid white"
                 }
             )
@@ -111,3 +136,22 @@ def register_page_callbacks(app):
             return login.layout(app)
         # Standaard naar de galerijpagina
         return gallery.layout(app)
+
+    @app.callback(
+        Output('logout-button', 'style'),
+        Input('url', 'pathname')
+    )
+    def update_logout_button(pathname):
+        # Toon de uitlogknop alleen als de gebruiker is ingelogd
+        if app_data.get('is_authenticated', False):
+            return {
+                "marginLeft": "20px",
+                "backgroundColor": "#CA005D",
+                "color": "white",
+                "border": "none",
+                "borderRadius": "5px",
+                "padding": "5px 10px",
+                "cursor": "pointer",
+                "display": "block"  # Maak de knop zichtbaar
+            }
+        return {"display": "none"}  # Verberg de knop als de gebruiker niet is ingelogd
