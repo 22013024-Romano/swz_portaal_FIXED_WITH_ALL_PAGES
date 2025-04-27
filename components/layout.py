@@ -9,7 +9,7 @@ def create_layout(app):
             "backgroundColor": "white",
             "color": "black",
             "minHeight": "100vh",
-            "fontFamily": "Arial, sans-serif",
+            "fontFamily": "RijksoverheidSans, Arial, sans-serif",
             "display": "flex",
             "flexDirection": "column"
         },
