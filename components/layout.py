@@ -76,15 +76,19 @@ def create_layout(app):
                                     "backgroundColor": "#CA005D",
                                     "color": "white",
                                     "border": "none",
-                                    "borderRadius": "5px",
-                                    "padding": "5px 10px",
+                                    "borderRadius": "6px",
+                                    "padding": "8px 22px",
                                     "cursor": "pointer",
                                     "display": "none",  # Standaard verborgen
-                                    "marginRight": "20px"  # Voeg ruimte toe aan de rechterkant
+                                    "marginRight": "24px",
+                                    "fontWeight": "bold",
+                                    "fontSize": "16px",
+                                    "boxShadow": "0 2px 8px rgba(0,0,0,0.08)",
+                                    "transition": "background 0.2s"
                                 }
                             )
                         ],
-                        style={"display": "inline-block", "float": "right"}
+                        style={"display": "inline-block", "float": "right", "verticalAlign": "middle"}
                     )
                 ],
                 style={
@@ -146,6 +150,7 @@ def register_page_callbacks(app):
         if app_data.get('is_authenticated', False):
             return {
                 "marginLeft": "20px",
+                "marginRight": "10px",
                 "backgroundColor": "#CA005D",
                 "color": "white",
                 "border": "none",
