@@ -1,5 +1,5 @@
 import json
-from dash import html, dcc, Input, Output, State, ALL
+from dash import html, dcc, Input, Output, State, ALL, MATCH
 import base64
 import io
 import pandas as pd
@@ -12,6 +12,23 @@ import numpy as np
 # Laad de kleuren en tinten uit het JSON-bestand
 with open("data/colors.json", "r") as f:
     COLORS = json.load(f)
+
+COLOR_CODES = {}
+for color_name, shades in COLORS.items():
+    for shade, code in shades.items():
+        COLOR_CODES[f"{color_name} {shade}"] = code
+
+COLOR_EMOJIS = {
+    "Lintblauw": "🟦",
+    "Rood": "🟥",
+    "Geel": "🟨",
+    "Groen": "🟩",
+    "Oranje": "🟧",
+    "Paars": "🟪",
+    "Zwart": "⬛",
+    "Grijs": "⬜",
+    # Voeg meer toe indien gewenst
+}
 
 def layout(app):
     return html.Div([
@@ -98,17 +115,40 @@ def register_callbacks(app):
             options = []
             for color_name, shades in COLORS.items():
                 for shade, code in shades.items():
-                    options.append({'label': f"{color_name} {shade}", 'value': code})
-            
-            dropdowns.append(html.Div([
-                html.Label(f"Kleur voor {col}:"),
-                dcc.Dropdown(
-                    id={'type': 'color-dropdown', 'index': col},
-                    options=options,
-                    value=list(COLORS.values())[0]["100%"]  # Standaardkleur (100%)
-                )
-            ], style={"marginBottom": "10px"}))
-        
+                    naam_tint = f"{color_name} {shade}"
+                    options.append({
+                        'label': f"{color_name} {shade}",
+                        'value': naam_tint
+                    })
+            # Zet standaardkleur
+            default_value = list(COLORS.keys())[0] + " 100%"
+            default_color = COLOR_CODES.get(default_value, "#000000")
+            dropdowns.append(
+                html.Div([
+                    html.Label(f"Kleur voor {col}:"),
+                    html.Div([
+                        # Zet het kleurvlakje eerst
+                        html.Div(
+                            id={'type': 'color-preview', 'index': col},
+                            style={
+                                'display': 'inline-block',
+                                'width': '32px',
+                                'height': '32px',
+                                'verticalAlign': 'middle',
+                                'marginRight': '10px',  # Nu rechts van het vlakje ruimte
+                                'backgroundColor': default_color,
+                                'border': '1px solid #888'
+                            }
+                        ),
+                        dcc.Dropdown(
+                            id={'type': 'color-dropdown', 'index': col},
+                            options=options,
+                            value=default_value,
+                            style={'width': '80%', 'display': 'inline-block'}
+                        ),
+                    ])
+                ], style={"marginBottom": "10px"})
+            )
         return dropdowns
 
     @app.callback(
@@ -126,7 +166,8 @@ def register_callbacks(app):
             return fig
         
         for i, y in enumerate(ys):
-            color = colors[i] if i < len(colors) else "#000000"  # Gebruik zwart als fallback
+            naam_tint = colors[i] if i < len(colors) else None
+            color = COLOR_CODES.get(naam_tint, "#000000")  # Haal de kleurcode op
             if chart_type == 'line':
                 fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='lines+markers', name=y, line=dict(color=color)))
             elif chart_type == 'bar':
@@ -192,3 +233,19 @@ def register_callbacks(app):
         except Exception as e:
             # Foutafhandeling
             return f"❌ Fout bij het opslaan van de visualisatie: {e}"
+
+    @app.callback(
+        Output({'type': 'color-preview', 'index': MATCH}, 'style'),
+        Input({'type': 'color-dropdown', 'index': MATCH}, 'value')
+    )
+    def update_color_preview(naam_tint):
+        color = COLOR_CODES.get(naam_tint, "#000000")
+        return {
+            'display': 'inline-block',
+            'width': '32px',
+            'height': '32px',
+            'verticalAlign': 'middle',
+            'marginLeft': '10px',
+            'backgroundColor': color,
+            'border': '1px solid #888'
+        }
