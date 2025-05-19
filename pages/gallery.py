@@ -6,15 +6,34 @@ from app_data import app_data  # Controleer de authenticatiestatus
 
 def layout(app):
     return html.Div([
-        html.H2("🖼️ Galerij"),
-        dcc.Input(
-            id="search-input",
-            type="text",
-            placeholder="🔍 Zoek op titel...",
-            style={"marginBottom": "10px", "width": "50%"}
+        html.H2("🖼️ Galerij", style={
+            "textAlign": "center",
+            "marginBottom": "30px",
+            "color": "#CA005D",
+            "fontWeight": "bold"
+        }),
+        html.Div(
+            dcc.Input(
+                id="search-input",
+                type="text",
+                placeholder="🔍 Zoek op titel...",
+                style={
+                    "marginBottom": "20px",
+                    "width": "60%",
+                    "padding": "10px",
+                    "borderRadius": "6px",
+                    "border": "1px solid #ccc",
+                    "display": "inline-block"
+                }
+            ),
+            style={"textAlign": "center"}
         ),
         html.Div(id="search-results", style={"marginTop": "20px"})
-    ])
+    ], style={
+        "backgroundColor": "#f7f7f7",
+        "minHeight": "100vh",
+        "padding": "30px"
+    })
 
 def register_callbacks(app):
     
@@ -34,10 +53,9 @@ def register_callbacks(app):
     )
     def update_gallery(search_term, n_clicks, search_state):
         try:
-            # Lees de opgeslagen visualisaties
             path = "storage/saved_graphs.json"
             if not os.path.exists(path):
-                return "⚠️ Geen opgeslagen visualisaties gevonden."
+                return html.Div("⚠️ Geen opgeslagen visualisaties gevonden.", style={"margin": "30px", "color": "#CA005D"})
 
             # Verwijderfunctionaliteit
             if n_clicks and any(click is not None for click in n_clicks):
@@ -68,23 +86,49 @@ def register_callbacks(app):
                         results.append(record)
 
             if not results:
-                return "⚠️ Geen resultaten gevonden."
+                return html.Div("⚠️ Geen resultaten gevonden.", style={"margin": "30px", "color": "#CA005D"})
 
-            # Toon de resultaten
-            return html.Ul([
-                html.Li([
-                    html.H4(rec['title']),
-                    html.P(f"Beschrijving: {rec['description']}"),
-                    html.Small(f"Gebruiker: {rec['user']} - Datum: {rec['timestamp']}"),
-                    dcc.Graph(figure=rec['figure']),
-                    # Verwijderknop alleen tonen als de gebruiker is ingelogd
-                    html.Button(
-                        "Verwijderen",
-                        id={'type': 'delete-button', 'index': i},
-                        style={"marginTop": "10px", "display": "block"} if app_data['is_authenticated'] else {"display": "none"}
-                    )
+            # Toon de resultaten als cards over de hele breedte
+            return html.Div([
+                html.Div([
+                    html.Div([
+                        html.H4(rec['title'], style={"marginBottom": "8px", "color": "#CA005D"}),
+                        html.P(f"Beschrijving: {rec['description']}", style={"marginBottom": "8px"}),
+                        html.Small(f"Gebruiker: {rec['user']} – Datum: {rec['timestamp']}", style={"color": "#888"}),
+                        dcc.Graph(figure=rec['figure'], config={"displayModeBar": False}, style={"height": "320px", "marginTop": "10px"}),
+                        html.Button(
+                            "Verwijderen",
+                            id={'type': 'delete-button', 'index': i},
+                            style={
+                                "marginTop": "12px",
+                                "backgroundColor": "#CA005D",
+                                "color": "white",
+                                "border": "none",
+                                "borderRadius": "5px",
+                                "padding": "8px 18px",
+                                "fontWeight": "bold",
+                                "cursor": "pointer",
+                                "display": "block" if app_data['is_authenticated'] else "none"
+                            }
+                        )
+                    ], style={
+                        "background": "white",
+                        "borderRadius": "12px",
+                        "boxShadow": "0 2px 8px rgba(0,0,0,0.09)",
+                        "padding": "28px",
+                        "margin": "0 auto 32px auto",
+                        "width": "100%",
+                        "maxWidth": "1100px",
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "justifyContent": "space-between"
+                    })
                 ]) for i, rec in enumerate(results)
-            ])
+            ], style={
+                "display": "flex",
+                "flexDirection": "column",
+                "alignItems": "center"
+            })
 
         except Exception as e:
-            return f"❌ Fout bij het verwerken: {e}"
+            return html.Div(f"❌ Fout bij het verwerken: {e}", style={"color": "#CA005D", "margin": "30px"})

@@ -354,7 +354,7 @@ def register_callbacks(app):
                 "title": title,
                 "description": desc,
                 "user": app_data.get("current_user", "Onbekend"),
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now().strftime("%Y-%m-%d"),
                 "figure": figure_json
             }
 
