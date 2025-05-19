@@ -82,7 +82,11 @@ def register_callbacks(app):
                 for line in f:
                     record = json.loads(line)
                     # Voeg alle records toe als er geen zoekterm is
-                    if not search_term or search_term.lower() in record["title"].lower():
+                    if (
+                        not search_term
+                        or search_term.lower() in record.get("title", "").lower()
+                        or search_term.lower() in record.get("description", "").lower()
+                    ):
                         results.append(record)
 
             if not results:
