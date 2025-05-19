@@ -32,34 +32,156 @@ COLOR_EMOJIS = {
 
 def layout(app):
     return html.Div([
-        html.H2("📊 Dashboard"),
-        dcc.Upload(
-            id='upload-data',
-            children=html.Button('📤 Upload CSV-bestanden'),
-            multiple=True  # Meerdere bestanden toestaan
-        ),
-        html.Div(id='upload-output'),
-        html.Label("X-as kolom:"),
-        dcc.Dropdown(id='x-axis'),
-        html.Label("Y-as kolommen:"),
-        dcc.Dropdown(id='y-axis', multi=True),
-        html.Label("Kleuren per Y-as:"),
-        html.Div(id='color-selectors'),  # Dynamische kleurselectie
-        html.Label("Chart type:"),
-        dcc.Dropdown(
-            id='chart-type',
-            options=[{'label': i, 'value': i} for i in ['line', 'bar', 'scatter']],
-            value='line'
-        ),
-        html.Label("Titel van de visualisatie:"),
-        dcc.Input(id='dashboard-title', type='text', placeholder='Voer een titel in...', style={'width': '100%', 'marginBottom': '10px'}),
-        html.Label("Toelichting:"),
-        dcc.Textarea(id='description', style={'width': '100%', 'height': 100}),
-        html.Button("📈 Genereer", id='generate-btn'),
-        dcc.Graph(id='plot'),
-        html.Button("✅ Publiceer", id='publish-btn'),
-        html.Div(id='publish-status')
-    ])
+        html.H2("📊 Dashboard", style={
+            "textAlign": "center",
+            "marginBottom": "30px",
+            "color": "#CA005D",
+            "fontWeight": "bold",
+            "fontSize": "2rem"
+        }),
+
+        # Upload card
+        html.Div([
+            html.H4("1. Upload je CSV-bestanden", style={"marginBottom": "10px"}),
+            dcc.Upload(
+                id='upload-data',
+                children=html.Button('📤 Upload CSV-bestanden', style={
+                    "backgroundColor": "#CA005D",
+                    "color": "white",
+                    "border": "none",
+                    "borderRadius": "5px",
+                    "padding": "10px 20px",
+                    "fontWeight": "bold",
+                    "cursor": "pointer"
+                }),
+                multiple=True
+            ),
+            html.Div(id='upload-output', style={"marginTop": "10px", "color": "#333"})
+        ], style={
+            "backgroundColor": "#f7f7f7",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "600px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
+        # Instellingen card
+        html.Div([
+            html.H4("2. Instellingen", style={"marginBottom": "18px"}),
+            html.Div([
+                html.Div([
+                    html.Label("X-as kolom:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Dropdown(id='x-axis', style={"width": "100%"})
+                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+
+                html.Div([
+                    html.Label("Y-as kolommen:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Dropdown(id='y-axis', multi=True, style={"width": "100%"})
+                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+            ], style={"marginBottom": "18px"}),
+
+            html.Label("Kleuren per Y-as:", style={"fontWeight": "bold", "marginTop": "10px"}),
+            html.Div(id='color-selectors', style={"marginBottom": "18px"}),
+
+            html.Div([
+                html.Div([
+                    html.Label("Chart type:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Dropdown(
+                        id='chart-type',
+                        options=[{'label': i.capitalize(), 'value': i} for i in ['line', 'bar', 'scatter']],
+                        value='line',
+                        style={"width": "100%"}
+                    )
+                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+
+                html.Div([
+                    html.Label("Titel van de visualisatie:", style={"fontWeight": "bold"}),
+                    dcc.Input(
+                        id='dashboard-title',
+                        type='text',
+                        placeholder='Voer een titel in...',
+                        style={'width': '100%', 'marginBottom': '10px'}
+                    )
+                ], style={"marginBottom": "18px"}),
+            ], style={"marginBottom": "18px"}),
+
+            html.Label("Toelichting:", style={"fontWeight": "bold"}),
+            dcc.Textarea(id='description', style={'width': '100%', 'height': 80, "marginBottom": "18px"}),
+        ], style={
+            "backgroundColor": "#f7f7f7",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "900px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
+        # Genereer-knop en grafiek
+        html.Div([
+            html.Button("📈 Genereer", id='generate-btn', style={
+                "backgroundColor": "#CA005D",
+                "color": "white",
+                "border": "none",
+                "borderRadius": "5px",
+                "padding": "10px 30px",
+                "fontWeight": "bold",
+                "fontSize": "1rem",
+                "cursor": "pointer",
+                "marginBottom": "20px"
+            }),
+            dcc.Graph(id='plot', style={"backgroundColor": "white", "borderRadius": "10px", "boxShadow": "0 2px 8px rgba(0,0,0,0.07)"})
+        ], style={
+            "backgroundColor": "#fff",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "900px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
+        # Publiceer-knop
+        html.Div([
+            html.Button("✅ Publiceer", id='publish-btn', style={
+                "backgroundColor": "#009966",
+                "color": "white",
+                "border": "none",
+                "borderRadius": "5px",
+                "padding": "10px 30px",
+                "fontWeight": "bold",
+                "fontSize": "1rem",
+                "cursor": "pointer",
+                "marginRight": "20px"
+            }),
+            html.Span(id='publish-status', style={"fontWeight": "bold", "color": "#CA005D"})
+        ], style={
+            "textAlign": "center",
+            "marginBottom": "40px"
+        })
+    ], style={
+        "backgroundColor": "#f2f2f2",
+        "minHeight": "100vh",
+        "paddingTop": "30px",
+        "paddingBottom": "30px"
+    })
 
 def register_callbacks(app):
     @app.callback(
@@ -125,9 +247,12 @@ def register_callbacks(app):
             default_color = COLOR_CODES.get(default_value, "#000000")
             dropdowns.append(
                 html.Div([
-                    html.Label(f"Kleur voor {col}:"),
+                    html.Label(f"Kleur voor {col}:", style={
+                        "minWidth": "120px",
+                        "marginRight": "16px",
+                        "fontWeight": "bold"
+                    }),
                     html.Div([
-                        # Zet het kleurvlakje eerst
                         html.Div(
                             id={'type': 'color-preview', 'index': col},
                             style={
@@ -135,7 +260,7 @@ def register_callbacks(app):
                                 'width': '32px',
                                 'height': '32px',
                                 'verticalAlign': 'middle',
-                                'marginRight': '10px',  # Nu rechts van het vlakje ruimte
+                                'marginRight': '16px',
                                 'backgroundColor': default_color,
                                 'border': '1px solid #888'
                             }
@@ -144,10 +269,22 @@ def register_callbacks(app):
                             id={'type': 'color-dropdown', 'index': col},
                             options=options,
                             value=default_value,
-                            style={'width': '80%', 'display': 'inline-block'}
+                            style={
+                                'width': '200px',
+                                'display': 'inline-block',
+                                'verticalAlign': 'middle'
+                            }
                         ),
-                    ])
-                ], style={"marginBottom": "10px"})
+                    ], style={
+                        "display": "flex",
+                        "alignItems": "center"
+                    })
+                ], style={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "marginBottom": "18px",
+                    "gap": "12px"
+                })
             )
         return dropdowns
 
