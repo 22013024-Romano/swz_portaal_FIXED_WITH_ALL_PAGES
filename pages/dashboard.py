@@ -103,7 +103,25 @@ def layout(app):
                     }),
                     dcc.Dropdown(
                         id='chart-type',
-                        options=[{'label': i.capitalize(), 'value': i} for i in ['line', 'bar', 'scatter']],
+                        options=[
+                            {'label': 'Lijn (Line)', 'value': 'line'},
+                            {'label': 'Staaf (Bar)', 'value': 'bar'},
+                            {'label': 'Punten (Scatter)', 'value': 'scatter'},
+                            {'label': 'Taartdiagram (Pie)', 'value': 'pie'},
+                            {'label': 'Donut', 'value': 'donut'},
+                            {'label': 'Histogram', 'value': 'histogram'},
+                            {'label': 'Boxplot', 'value': 'box'},
+                            {'label': 'Violinplot', 'value': 'violin'},
+                            {'label': 'Heatmap', 'value': 'heatmap'},
+                            {'label': 'Area', 'value': 'area'},
+                            {'label': 'Bubble', 'value': 'bubble'},
+                            {'label': 'Funnel', 'value': 'funnel'},
+                            {'label': 'Sunburst', 'value': 'sunburst'},
+                            {'label': 'Treemap', 'value': 'treemap'},
+                            {'label': 'Polar', 'value': 'polar'},
+                            {'label': '3D Scatter', 'value': 'scatter3d'},
+                            {'label': '3D Surface', 'value': 'surface'},
+                        ],
                         value='line',
                         style={"width": "100%"}
                     )
@@ -301,17 +319,67 @@ def register_callbacks(app):
         fig = go.Figure()
         if df is None or x is None or not ys:
             return fig
-        
+
         for i, y in enumerate(ys):
             naam_tint = colors[i] if i < len(colors) else None
-            color = COLOR_CODES.get(naam_tint, "#000000")  # Haal de kleurcode op
+            color = COLOR_CODES.get(naam_tint, "#000000")
             if chart_type == 'line':
                 fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='lines+markers', name=y, line=dict(color=color)))
             elif chart_type == 'bar':
                 fig.add_trace(go.Bar(x=df[x], y=df[y], name=y, marker=dict(color=color)))
             elif chart_type == 'scatter':
                 fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='markers', name=y, marker=dict(color=color)))
-        
+            elif chart_type == 'area':
+                fig.add_trace(go.Scatter(x=df[x], y=df[y], fill='tozeroy', mode='lines', name=y, line=dict(color=color)))
+            elif chart_type == 'bubble':
+                fig.add_trace(go.Scatter(
+                    x=df[x], y=df[y], mode='markers', name=y,
+                    marker=dict(size=df[y], color=color, sizemode='area', sizeref=2.*max(df[y])/(40.**2), sizemin=4)
+                ))
+            elif chart_type == 'histogram':
+                fig.add_trace(go.Histogram(x=df[y], name=y, marker=dict(color=color)))
+            elif chart_type == 'box':
+                fig.add_trace(go.Box(y=df[y], name=y, marker=dict(color=color)))
+            elif chart_type == 'violin':
+                fig.add_trace(go.Violin(y=df[y], name=y, line=dict(color=color)))
+            elif chart_type == 'heatmap':
+                if len(ys) > 1 and x in df.columns:
+                    fig.add_trace(go.Heatmap(z=df[ys].values, x=df[x], y=ys, colorscale='Viridis'))
+                    break
+                else:
+                    fig.add_trace(go.Heatmap(z=[df[y].values], x=df[x], y=[y], colorscale='Viridis'))
+            elif chart_type == 'pie':
+                fig = go.Figure(go.Pie(labels=df[x], values=df[y], marker=dict(colors=[color])))
+                break
+            elif chart_type == 'donut':
+                fig = go.Figure(go.Pie(labels=df[x], values=df[y], hole=0.4, marker=dict(colors=[color])))
+                break
+            elif chart_type == 'funnel':
+                fig = go.Figure(go.Funnel(y=df[x], x=df[y], marker=dict(color=color)))
+                break
+            elif chart_type == 'sunburst':
+                fig = go.Figure(go.Sunburst(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
+                break
+            elif chart_type == 'treemap':
+                fig = go.Figure(go.Treemap(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
+                break
+            elif chart_type == 'polar':
+                fig.add_trace(go.Scatterpolar(r=df[y], theta=df[x], mode='lines+markers', name=y, line=dict(color=color)))
+            elif chart_type == 'scatter3d':
+                if len(ys) >= 3:
+                    fig = go.Figure(go.Scatter3d(
+                        x=df[ys[0]], y=df[ys[1]], z=df[ys[2]],
+                        mode='markers', marker=dict(color=color), name="3D Scatter"
+                    ))
+                    break
+            elif chart_type == 'surface':
+                if len(ys) >= 3:
+                    fig = go.Figure(go.Surface(
+                        z=df[ys[2]].values.reshape((len(df[ys[0]].unique()), len(df[ys[1]].unique()))),
+                        x=df[ys[0]].unique(), y=df[ys[1]].unique(), colorscale='Viridis'
+                    ))
+                    break
+
         app_data['graph'] = fig
         return fig
 
