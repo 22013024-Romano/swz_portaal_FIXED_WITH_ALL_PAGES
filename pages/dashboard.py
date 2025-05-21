@@ -219,13 +219,21 @@ def register_callbacks(app):
                 content_type, content_string = contents.split(',')
                 decoded = base64.b64decode(content_string)
 
-                # Probeer elk bestand te lezen met verschillende coderingen
-                try:
-                    df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-                except UnicodeDecodeError:
-                    df = pd.read_csv(io.StringIO(decoded.decode('latin-1')))
+                # Detecteer bestandstype en lees in
+                if filename.lower().endswith('.csv'):
+                    try:
+                        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+                    except UnicodeDecodeError:
+                        df = pd.read_csv(io.StringIO(decoded.decode('latin-1')))
+                elif filename.lower().endswith(('.xls', '.xlsx')):
+                    df = pd.read_excel(io.BytesIO(decoded))
+                else:
+                    continue  # Sla onbekende bestandstypes over
 
                 dfs.append(df)  # Voeg het dataframe toe aan de lijst
+
+            if not dfs:
+                return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], []
 
             # Combineer alle dataframes
             combined_df = pd.concat(dfs, ignore_index=True)
@@ -235,7 +243,7 @@ def register_callbacks(app):
 
             # Genereer opties voor de dropdowns
             options = [{'label': col, 'value': col} for col in combined_df.columns]
-            return f"✅ {len(filenames)} bestanden succesvol geüpload en gecombineerd.", options, options
+            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options
 
         except Exception as e:
             # Foutafhandeling
