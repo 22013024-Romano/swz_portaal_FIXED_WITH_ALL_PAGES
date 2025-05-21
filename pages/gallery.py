@@ -99,7 +99,7 @@ def register_callbacks(app):
                         html.H4(rec['title'], style={"marginBottom": "8px", "color": "#CA005D"}),
                         html.P(f"Beschrijving: {rec['description']}", style={"marginBottom": "8px"}),
                         html.Small(f"Gebruiker: {rec['user']} – Datum: {rec['timestamp']}", style={"color": "#888"}),
-                        dcc.Graph(figure=rec['figure'], config={"displayModeBar": False}, style={"height": "320px", "marginTop": "10px"}),
+                        dcc.Graph(figure=rec['figure'], config={"displayModeBar": True}, style={"height": "320px", "marginTop": "10px"}),
                         html.Button(
                             "Verwijderen",
                             id={'type': 'delete-button', 'index': i},
