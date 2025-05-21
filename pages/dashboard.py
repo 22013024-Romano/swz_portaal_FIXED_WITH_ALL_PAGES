@@ -108,7 +108,6 @@ def layout(app):
                             {'label': 'Staaf (Bar)', 'value': 'bar'},
                             {'label': 'Punten (Scatter)', 'value': 'scatter'},
                             {'label': 'Taartdiagram (Pie)', 'value': 'pie'},
-                            {'label': 'Donut', 'value': 'donut'},
                             {'label': 'Histogram', 'value': 'histogram'},
                             {'label': 'Boxplot', 'value': 'box'},
                             {'label': 'Violinplot', 'value': 'violin'},
