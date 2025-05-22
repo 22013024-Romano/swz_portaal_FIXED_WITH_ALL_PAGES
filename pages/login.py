@@ -123,8 +123,8 @@ def register_callbacks(app):
                     if user["email"] == email and user["password"] == pw:
                         app_data['is_authenticated'] = True
                         app_data['current_user'] = email
-                        return "/dashboard", f"✅ Ingelogd als {email}"
-                return None, "❌ Verkeerde gebruikersnaam of wachtwoord."
+                        return "/dashboard", f"Ingelogd als {email}"
+                return None, html.Span("Verkeerde gebruikersnaam of wachtwoord.", style={"color": "#ED0707"})
             except Exception as e:
-                return None, f"❌ Fout: {e}"
-        return None, "❌ Vul je gegevens in."
+                return None, html.Span(f"Fout: {e}", style={"color": "#ED0707"})
+        return None, ""
