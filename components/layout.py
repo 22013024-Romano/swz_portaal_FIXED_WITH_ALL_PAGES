@@ -58,6 +58,7 @@ def create_layout(app):
                             dcc.Link(
                                 "🔐 Login",
                                 href="/login",
+                                id="login-link",
                                 style={
                                     "marginRight": "20px",
                                     "color": "#CA005D",
@@ -160,3 +161,28 @@ def register_page_callbacks(app):
                 "display": "block"  # Maak de knop zichtbaar
             }
         return {"display": "none"}  # Verberg de knop als de gebruiker niet is ingelogd
+
+    @app.callback(
+        Output('login-button', 'disabled'),
+        Input('url', 'pathname')
+    )
+    def disable_login_button(pathname):
+        # Deactiveer de login-knop als de gebruiker al is ingelogd
+        if app_data.get('is_authenticated', False):
+            return True
+        return False
+
+    @app.callback(
+        Output('login-link', 'style'),
+        Input('url', 'pathname')
+    )
+    def hide_login_link(pathname):
+        # Verberg de login-link als de gebruiker is ingelogd
+        if app_data.get('is_authenticated', False):
+            return {"display": "none"}
+        return {
+            "marginRight": "20px",
+            "color": "#CA005D",
+            "textDecoration": "none",
+            "display": "inline-block"
+        }
