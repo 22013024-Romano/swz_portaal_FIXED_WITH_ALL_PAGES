@@ -2,6 +2,7 @@ from dash import html, dcc, Input, Output, State, ALL
 import dash
 import json
 import os
+import plotly.graph_objs as go
 from app_data import app_data  # Controleer de authenticatiestatus
 
 def layout(app):
@@ -36,15 +37,6 @@ def layout(app):
     })
 
 def register_callbacks(app):
-    
-    def logout_user(n_clicks):
-        if n_clicks:
-            # Zet de authenticatiestatus op False
-            app_data['is_authenticated'] = False
-            app_data['current_user'] = None
-            return "/login"  # Stuur de gebruiker naar de loginpagina
-        return dash.no_update
-
     @app.callback(
         Output('search-results', 'children'),
         [Input('search-input', 'value'),
@@ -57,37 +49,40 @@ def register_callbacks(app):
             if not os.path.exists(path):
                 return html.Div("⚠️ Geen opgeslagen visualisaties gevonden.", style={"margin": "30px", "color": "#CA005D"})
 
-            # Verwijderfunctionaliteit
+            # Laad alle records
+            with open(path, "r") as f:
+                records = [json.loads(line) for line in f]
+
+            # Verwijderfunctionaliteit op basis van unieke timestamp
+            triggered = dash.callback_context.triggered
             if n_clicks and any(click is not None for click in n_clicks):
                 if not app_data['is_authenticated']:
                     return "❌ Alleen ingelogde gebruikers kunnen dashboards verwijderen."
 
-                # Zoek het dashboard dat moet worden verwijderd
-                with open(path, "r") as f:
-                    records = [json.loads(line) for line in f]
-
-                updated_records = []
-                for i, record in enumerate(records):
-                    if i >= len(n_clicks) or n_clicks[i] is None:  # Niet aangeklikt, behouden
-                        updated_records.append(record)
-
-                # Schrijf de bijgewerkte lijst terug naar het bestand
-                with open(path, "w") as f:
-                    for record in updated_records:
-                        f.write(json.dumps(record) + "\n")
+                # Zoek welke knop is geklikt
+                for t in triggered:
+                    prop_id = t['prop_id']
+                    if prop_id.startswith("{"):
+                        btn_id = json.loads(prop_id.split('.')[0])
+                        if btn_id.get('type') == 'delete-button':
+                            # Vind het record met deze unieke timestamp
+                            delete_timestamp = btn_id.get('index')
+                            records = [rec for rec in records if rec.get('timestamp') != delete_timestamp]
+                            # Schrijf terug
+                            with open(path, "w") as f:
+                                for record in records:
+                                    f.write(json.dumps(record) + "\n")
+                            break  # Slechts één verwijderen per klik
 
             # Zoekfunctionaliteit
             results = []
-            with open(path, "r") as f:
-                for line in f:
-                    record = json.loads(line)
-                    # Voeg alle records toe als er geen zoekterm is
-                    if (
-                        not search_term
-                        or search_term.lower() in record.get("title", "").lower()
-                        or search_term.lower() in record.get("description", "").lower()
-                    ):
-                        results.append(record)
+            for record in records:
+                if (
+                    not search_term
+                    or search_term.lower() in record.get("title", "").lower()
+                    or search_term.lower() in record.get("description", "").lower()
+                ):
+                    results.append(record)
 
             if not results:
                 return html.Div("⚠️ Geen resultaten gevonden.", style={"margin": "30px", "color": "#CA005D"})
@@ -99,10 +94,14 @@ def register_callbacks(app):
                         html.H4(rec['title'], style={"marginBottom": "8px", "color": "#CA005D"}),
                         html.P(f"Beschrijving: {rec['description']}", style={"marginBottom": "8px"}),
                         html.Small(f"Gebruiker: {rec['user']} – Datum: {rec['timestamp']}", style={"color": "#888"}),
-                        dcc.Graph(figure=rec['figure'], config={"displayModeBar": True}, style={"height": "320px", "marginTop": "10px"}),
+                        dcc.Graph(
+                            figure=go.Figure(rec['figure']),
+                            config={"displayModeBar": True},
+                            style={"height": "320px", "marginTop": "10px"}
+                        ),
                         html.Button(
                             "Verwijderen",
-                            id={'type': 'delete-button', 'index': i},
+                            id={'type': 'delete-button', 'index': rec['timestamp']},  # Gebruik timestamp als unieke index
                             style={
                                 "marginTop": "12px",
                                 "backgroundColor": "#CA005D",
@@ -127,7 +126,7 @@ def register_callbacks(app):
                         "flexDirection": "column",
                         "justifyContent": "space-between"
                     })
-                ]) for i, rec in enumerate(results)
+                ]) for rec in results
             ], style={
                 "display": "flex",
                 "flexDirection": "column",
