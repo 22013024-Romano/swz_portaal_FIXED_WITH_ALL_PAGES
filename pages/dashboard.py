@@ -68,6 +68,33 @@ def layout(app):
             "marginRight": "auto"
         }),
 
+        # Upload bouwblokken.
+        html.Div([
+            html.H4("X. Upload json-export-bestanden", style={"marginBottom": "10px"}),
+            dcc.Upload(
+                id='upload-export-data',
+                children=html.Button('📤 Upload json-export-bestanden', style={
+                    "backgroundColor": "#CA005D",
+                    "color": "white",
+                    "border": "none",
+                    "borderRadius": "5px",
+                    "padding": "10px 20px",
+                    "fontWeight": "bold",
+                    "cursor": "pointer"
+                }),
+            ),
+            html.Div(id='upload-export-output', style={"marginTop": "10px", "color": "#333"})
+        ], style={
+            "backgroundColor": "#f7f7f7",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "600px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
         # Instellingen card
         html.Div([
             html.H4("2. Instellingen", style={"marginBottom": "18px"}),
@@ -248,6 +275,36 @@ def register_callbacks(app):
         except Exception as e:
             # Foutafhandeling
             return f"❌ Fout bij het verwerken van de bestanden: {e}", [], []
+
+    @app.callback(
+        [Output('upload-export-output', 'children'),
+         Output('plot', 'figure', allow_duplicate=True),],
+        [Input('upload-export-data', 'contents')],
+        [State('upload-export-data', 'filename')],
+        prevent_initial_call=True
+    )
+    def handle_export_file_upload(content, filename):
+        if content is None:
+            return ["test?", []]
+
+        if not filename.lower().endswith('.json'):
+            return ["Upload een JSON bestand!", []]
+
+        _content_type, content_string = content.split(',')
+        decoded = base64.b64decode(content_string)
+
+        try:
+            graph_str = io.StringIO(decoded.decode('utf-8'))
+        except UnicodeDecodeError:
+            graph_str = io.StringIO(decoded.decode('latin-1'))
+
+        graph_str = graph_str.read()
+        graph = json.loads(graph_str)
+
+        print(graph)
+
+        app_data['graph'] = graph
+        return [f"Geselecteerd bestand: {filename}", graph]
 
     @app.callback(
         Output('color-selectors', 'children'),
