@@ -278,33 +278,55 @@ def register_callbacks(app):
 
     @app.callback(
         [Output('upload-export-output', 'children'),
-         Output('plot', 'figure', allow_duplicate=True),],
+         Output('plot', 'figure', allow_duplicate=True),
+         Output('x-axis', 'options', allow_duplicate=True),
+         Output('y-axis', 'options', allow_duplicate=True),
+         Output('chart-type', 'value', allow_duplicate=True)],
         [Input('upload-export-data', 'contents')],
         [State('upload-export-data', 'filename')],
         prevent_initial_call=True
     )
     def handle_export_file_upload(content, filename):
-        if content is None:
-            return ["test?", []]
-
         if not filename.lower().endswith('.json'):
-            return ["Upload een JSON bestand!", []]
+            return ["❌ Upload een JSON bestand.", None, [], [], None]
 
         _content_type, content_string = content.split(',')
         decoded = base64.b64decode(content_string)
 
         try:
-            graph_str = io.StringIO(decoded.decode('utf-8'))
+            content_io = io.StringIO(decoded.decode('utf-8'))
         except UnicodeDecodeError:
-            graph_str = io.StringIO(decoded.decode('latin-1'))
+            content_io = io.StringIO(decoded.decode('latin-1'))
 
-        graph_str = graph_str.read()
-        graph = json.loads(graph_str)
+        content_str = content_io.read()
+        content = json.loads(content_str)
+        print(content.keys())
 
-        print(graph)
+        # import numpy as np
 
+        # trace = graph["data"][0]
+        # print(graph["layout"].keys())
+
+        # print(trace.keys())
+        # print(trace["x"])
+
+        # binary_y = base64.b64decode(trace["x"]['bdata'])
+        # y_array = np.frombuffer(binary_y, dtype=trace["x"]['dtype'])
+        # print(y_array)
+
+        # options = { "label": trace["x"], "value": trace["y"] }
+
+        # options = [{'label': data["x"], 'value': data["y"]} for data in trace]
+
+        # app_data['graph'] = graph
+        graph = content["figureContents"]
         app_data['graph'] = graph
-        return [f"Geselecteerd bestand: {filename}", graph]
+
+        options = [{'label': col, 'value': col} for col in content["portalData"]["columns"]]
+        # options = content["portalData"]["x"]
+
+        # return [f"Geselecteerd bestand: {filename}", graph, options, options]
+        return [f"Geselecteerd bestand: {filename}", graph, options, options, content["portalData"]["chartType"]]
 
     @app.callback(
         Output('color-selectors', 'children'),
