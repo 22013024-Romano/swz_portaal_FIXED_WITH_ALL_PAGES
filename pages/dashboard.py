@@ -320,7 +320,7 @@ def register_callbacks(app):
 
         # app_data['graph'] = graph
         graph = content["figureContents"]
-        app_data['graph'] = graph
+        app_data["graph"] = graph
 
         options = [{'label': col, 'value': col} for col in content["portalData"]["columns"]]
         # options = content["portalData"]["x"]
@@ -493,7 +493,10 @@ def register_callbacks(app):
 
         try:
             # Maak een record aan voor de grafiek
-            figure_json = app_data["graph"].to_plotly_json()
+            if hasattr(app_data["graph"], "to_plotly_json"):
+                figure_json = app_data["graph"].to_plotly_json()
+            else:
+                figure_json = app_data["graph"]
 
             # Converteer numpy-arrays naar lijsten
             def convert_ndarray(obj):
