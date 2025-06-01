@@ -293,7 +293,7 @@ def register_callbacks(app):
                 return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
 
             # Combineer alle dataframes
-            combined_df = pd.concat(dfs, ignore_index=True).head(5)
+            combined_df = pd.concat(dfs, ignore_index=True).head(5) # TODO: removde .head call.
 
             # Sla het gecombineerde dataframe op in app_data
             app_data['df'] = combined_df
