@@ -1,9 +1,12 @@
+# TODO: wanneer een nieuw bestand wordt geselecteerd, verwijder de oude data.
+
 import json
 from dash import html, dcc, Input, Output, State, ALL, MATCH
 import base64
 import io
 import pandas as pd
 import plotly.graph_objs as go
+import plotly.express as px
 from app_data import app_data
 from datetime import datetime
 import os
@@ -14,9 +17,11 @@ with open("data/colors.json", "r") as f:
     COLORS = json.load(f)
 
 COLOR_CODES = {}
+COLOR_NAMES = {}
 for color_name, shades in COLORS.items():
     for shade, code in shades.items():
         COLOR_CODES[f"{color_name} {shade}"] = code
+        COLOR_NAMES[code] = f"{color_name} {shade}"
 
 COLOR_EMOJIS = {
     "Lintblauw": "🟦",
@@ -70,7 +75,7 @@ def layout(app):
 
         # Upload bouwblok.
         html.Div([
-            html.H4("X. Upload json-export-bestanden", style={"marginBottom": "10px"}),
+            html.H4("X. Upload json-export-bestanden fdsfdsfd", style={"marginBottom": "10px"}),
             dcc.Upload(
                 id='upload-export-data',
                 children=html.Button('📤 Upload json-export-bestanden', style={
@@ -95,64 +100,89 @@ def layout(app):
             "marginRight": "auto"
         }),
 
-        # Instellingen card
         html.Div([
+            html.H4("X. Kies het visualisatietype", style={"marginBottom": "10px"}),
+            html.Div([
+                html.Label("Chart type:", style={
+                    "fontWeight": "bold",
+                    "minWidth": "140px",
+                    "marginRight": "12px"
+                }),
+                dcc.Dropdown(
+                    id='chart-type',
+                    options=[
+                        {'label': 'Lijn (Line)', 'value': 'line'},
+                        {'label': 'Staaf (Bar)', 'value': 'bar'},
+                        {'label': 'Punten (Scatter)', 'value': 'scatter'},
+                        {'label': 'Taartdiagram (Pie)', 'value': 'pie'},
+                        {'label': 'Histogram', 'value': 'histogram'},
+                        {'label': 'Boxplot', 'value': 'box'},
+                        {'label': 'Violinplot', 'value': 'violin'},
+                        {'label': 'Heatmap', 'value': 'heatmap'},
+                        {'label': 'Area', 'value': 'area'},
+                        {'label': 'Bubble', 'value': 'bubble'},
+                        {'label': 'Funnel', 'value': 'funnel'},
+                        {'label': 'Sunburst', 'value': 'sunburst'},
+                        {'label': 'Treemap', 'value': 'treemap'},
+                        {'label': 'Polar', 'value': 'polar'},
+                        {'label': '3D Scatter', 'value': 'scatter3d'},
+                        {'label': '3D Surface', 'value': 'surface'},
+                    ],
+                    style={"width": "100%"}
+                )
+            ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+        ], style={
+            "backgroundColor": "#f7f7f7",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "600px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
+        # Instellingen card
+        html.Div(children=[
             html.H4("2. Instellingen", style={"marginBottom": "18px"}),
+
             html.Div([
                 html.Div([
-                    html.Label("X-as kolom:", style={
+                    html.Label("x-as:", style={
                         "fontWeight": "bold",
                         "minWidth": "140px",
                         "marginRight": "12px"
                     }),
                     dcc.Dropdown(id='x-axis', style={"width": "100%"})
                 ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
-
-                html.Div([
-                    html.Label("Y-as kolommen:", style={
-                        "fontWeight": "bold",
-                        "minWidth": "140px",
-                        "marginRight": "12px"
-                    }),
-                    dcc.Dropdown(id='y-axis', multi=True, style={"width": "100%"})
-                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
             ], style={"marginBottom": "18px"}),
-
-            html.Label("Kleuren per Y-as:", style={"fontWeight": "bold", "marginTop": "10px"}),
-            html.Div(id='color-selectors', style={"marginBottom": "18px"}),
 
             html.Div([
                 html.Div([
-                    html.Label("Chart type:", style={
+                    html.Label("y-as:", style={
                         "fontWeight": "bold",
                         "minWidth": "140px",
                         "marginRight": "12px"
                     }),
-                    dcc.Dropdown(
-                        id='chart-type',
-                        options=[
-                            {'label': 'Lijn (Line)', 'value': 'line'},
-                            {'label': 'Staaf (Bar)', 'value': 'bar'},
-                            {'label': 'Punten (Scatter)', 'value': 'scatter'},
-                            {'label': 'Taartdiagram (Pie)', 'value': 'pie'},
-                            {'label': 'Histogram', 'value': 'histogram'},
-                            {'label': 'Boxplot', 'value': 'box'},
-                            {'label': 'Violinplot', 'value': 'violin'},
-                            {'label': 'Heatmap', 'value': 'heatmap'},
-                            {'label': 'Area', 'value': 'area'},
-                            {'label': 'Bubble', 'value': 'bubble'},
-                            {'label': 'Funnel', 'value': 'funnel'},
-                            {'label': 'Sunburst', 'value': 'sunburst'},
-                            {'label': 'Treemap', 'value': 'treemap'},
-                            {'label': 'Polar', 'value': 'polar'},
-                            {'label': '3D Scatter', 'value': 'scatter3d'},
-                            {'label': '3D Surface', 'value': 'surface'},
-                        ],
-                        value='line',
-                        style={"width": "100%"}
-                    )
+                    dcc.Dropdown(id='y-axis', style={"width": "100%"})
                 ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+            ], style={"marginBottom": "18px"}),
 
+            html.Div([
+                html.Div([
+                    html.Label("Kleur toepassen:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Dropdown(id='column-to-color', style={"width": "100%"})
+                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+            ], style={"marginBottom": "18px"}),
+
+            html.Label("Kleuren:", style={"fontWeight": "bold", "marginTop": "10px"}),
+            html.Div(id='color-selectors', style={"marginBottom": "18px"}),
+
+            html.Div([
                 html.Div([
                     html.Label("Titel van de visualisatie:", style={"fontWeight": "bold"}),
                     dcc.Input(
@@ -231,14 +261,14 @@ def register_callbacks(app):
     @app.callback(
         [Output('upload-output', 'children'),
          Output('x-axis', 'options'),
-         Output('y-axis', 'options')],
+         Output('y-axis', 'options'),
+         Output('column-to-color', 'options'),],
         [Input('upload-data', 'contents')],
         [State('upload-data', 'filename')]
     )
     def handle_upload(contents_list, filenames):
         if contents_list is None:
-            return "❌ Geen bestanden geüpload.", [], []
-
+            return "❌ Geen bestanden geüpload.", [], [], []
         try:
             dfs = []  # Lijst om dataframes op te slaan
             for contents, filename in zip(contents_list, filenames):
@@ -260,28 +290,37 @@ def register_callbacks(app):
                 dfs.append(df)  # Voeg het dataframe toe aan de lijst
 
             if not dfs:
-                return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], []
+                return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
 
             # Combineer alle dataframes
-            combined_df = pd.concat(dfs, ignore_index=True)
+            combined_df = pd.concat(dfs, ignore_index=True).head(5)
 
             # Sla het gecombineerde dataframe op in app_data
             app_data['df'] = combined_df
+            app_data['parameters'] = {
+                "dataframe": combined_df.to_dict(),
+                "length": combined_df.shape[0],
+                "columns": list(combined_df.columns),
+            }
 
             # Genereer opties voor de dropdowns
             options = [{'label': col, 'value': col} for col in combined_df.columns]
-            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options
+            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options
 
         except Exception as e:
             # Foutafhandeling
-            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], []
+            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], []
 
     @app.callback(
         [Output('upload-export-output', 'children'),
          Output('plot', 'figure', allow_duplicate=True),
+         Output('column-to-color', 'options', allow_duplicate=True),
          Output('x-axis', 'options', allow_duplicate=True),
          Output('y-axis', 'options', allow_duplicate=True),
          Output('chart-type', 'value', allow_duplicate=True)],
+         Output('x-axis', 'value'),
+         Output('y-axis', 'value'),
+         Output('column-to-color', 'value'),
         [Input('upload-export-data', 'contents')],
         [State('upload-export-data', 'filename')],
         prevent_initial_call=True
@@ -303,21 +342,30 @@ def register_callbacks(app):
 
         graph = content["figureContents"]
         app_data["graph"] = graph
+        app_data["parameters"] = content["parameters"]
+        x = app_data["parameters"]["x"]
+        y = app_data["parameters"]["y"]
+        column_to_color = app_data["parameters"]["columnToColor"]
 
-        options = [{'label': col, 'value': col} for col in content["portalData"]["columns"]]
+        options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
-        return [f"Geselecteerd bestand: {filename}", graph, options, options, content["portalData"]["chartType"]]
+        # return [f"Geselecteerd bestand: {filename}", graph, options, options, content["portalData"]["chartType"]]
+        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color]
 
     @app.callback(
         Output('color-selectors', 'children'),
-        Input('y-axis', 'value')
+        Input('x-axis', 'value')
     )
     def update_color_selectors(y_columns):
         if not y_columns:
             return "❌ Selecteer eerst Y-as kolommen."
-        
+
         dropdowns = []
-        for col in y_columns:
+        # for col in y_columns:
+        for col in range(0, app_data["parameters"]["length"]):
+            color_from_module = None
+            if "colors" in app_data["parameters"]:
+                color_from_module = app_data["parameters"]["colors"][col]
             options = []
             for color_name, shades in COLORS.items():
                 for shade, code in shades.items():
@@ -331,7 +379,7 @@ def register_callbacks(app):
             default_color = COLOR_CODES.get(default_value, "#000000")
             dropdowns.append(
                 html.Div([
-                    html.Label(f"Kleur voor {col}:", style={
+                    html.Label(f"Kleur voor {col + 1}:", style={
                         "minWidth": "120px",
                         "marginRight": "16px",
                         "fontWeight": "bold"
@@ -352,7 +400,7 @@ def register_callbacks(app):
                         dcc.Dropdown(
                             id={'type': 'color-dropdown', 'index': col},
                             options=options,
-                            value=default_value,
+                            value=COLOR_NAMES[color_from_module] if color_from_module else default_value,
                             style={
                                 'width': '200px',
                                 'display': 'inline-block',
@@ -377,74 +425,91 @@ def register_callbacks(app):
         Input('generate-btn', 'n_clicks'),
         State('x-axis', 'value'),
         State('y-axis', 'value'),
+        State('column-to-color', 'value'),
         State('chart-type', 'value'),
         State({'type': 'color-dropdown', 'index': ALL}, 'value')  # Haal kleuren op
     )
-    def generate_chart(n, x, ys, chart_type, colors):
+    def generate_chart(n, x, y, column_to_color, chart_type, colors):
         df = app_data.get('df')
         fig = go.Figure()
-        if df is None or x is None or not ys:
-            return fig
 
-        for i, y in enumerate(ys):
-            naam_tint = colors[i] if i < len(colors) else None
-            color = COLOR_CODES.get(naam_tint, "#000000")
-            if chart_type == 'line':
-                fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='lines+markers', name=y, line=dict(color=color)))
-            elif chart_type == 'bar':
-                fig.add_trace(go.Bar(x=df[x], y=df[y], name=y, marker=dict(color=color)))
-            elif chart_type == 'scatter':
-                fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='markers', name=y, marker=dict(color=color)))
-            elif chart_type == 'area':
-                fig.add_trace(go.Scatter(x=df[x], y=df[y], fill='tozeroy', mode='lines', name=y, line=dict(color=color)))
-            elif chart_type == 'bubble':
-                fig.add_trace(go.Scatter(
-                    x=df[x], y=df[y], mode='markers', name=y,
-                    marker=dict(size=df[y], color=color, sizemode='area', sizeref=2.*max(df[y])/(40.**2), sizemin=4)
-                ))
-            elif chart_type == 'histogram':
-                fig.add_trace(go.Histogram(x=df[y], name=y, marker=dict(color=color)))
-            elif chart_type == 'box':
-                fig.add_trace(go.Box(y=df[y], name=y, marker=dict(color=color)))
-            elif chart_type == 'violin':
-                fig.add_trace(go.Violin(y=df[y], name=y, line=dict(color=color)))
-            elif chart_type == 'heatmap':
-                if len(ys) > 1 and x in df.columns:
-                    fig.add_trace(go.Heatmap(z=df[ys].values, x=df[x], y=ys, colorscale='Viridis'))
-                    break
-                else:
-                    fig.add_trace(go.Heatmap(z=[df[y].values], x=df[x], y=[y], colorscale='Viridis'))
-            elif chart_type == 'pie':
-                fig = go.Figure(go.Pie(labels=df[x], values=df[y], marker=dict(colors=[color])))
-                break
-            elif chart_type == 'donut':
-                fig = go.Figure(go.Pie(labels=df[x], values=df[y], hole=0.4, marker=dict(colors=[color])))
-                break
-            elif chart_type == 'funnel':
-                fig = go.Figure(go.Funnel(y=df[x], x=df[y], marker=dict(color=color)))
-                break
-            elif chart_type == 'sunburst':
-                fig = go.Figure(go.Sunburst(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
-                break
-            elif chart_type == 'treemap':
-                fig = go.Figure(go.Treemap(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
-                break
-            elif chart_type == 'polar':
-                fig.add_trace(go.Scatterpolar(r=df[y], theta=df[x], mode='lines+markers', name=y, line=dict(color=color)))
-            elif chart_type == 'scatter3d':
-                if len(ys) >= 3:
-                    fig = go.Figure(go.Scatter3d(
-                        x=df[ys[0]], y=df[ys[1]], z=df[ys[2]],
-                        mode='markers', marker=dict(color=color), name="3D Scatter"
-                    ))
-                    break
-            elif chart_type == 'surface':
-                if len(ys) >= 3:
-                    fig = go.Figure(go.Surface(
-                        z=df[ys[2]].values.reshape((len(df[ys[0]].unique()), len(df[ys[1]].unique()))),
-                        x=df[ys[0]].unique(), y=df[ys[1]].unique(), colorscale='Viridis'
-                    ))
-                    break
+        if "parameters" in app_data and "dataframe" in app_data["parameters"]:
+            df = app_data["parameters"]["dataframe"]
+
+        select_colors = []
+        for color in colors:
+            color_code = COLOR_CODES[color]
+            select_colors.append(color_code)
+
+        if chart_type == 'bar':
+            fig = px.bar(
+                df,
+                x=x,
+                y=y,
+                color=column_to_color,
+                color_discrete_sequence=select_colors,
+            )
+
+        # TODO: add support for more visuals.
+        # for i, y in enumerate(ys):
+        #     naam_tint = colors[i] if i < len(colors) else None
+        #     color = COLOR_CODES.get(naam_tint, "#000000")
+        #     if chart_type == 'line':
+        #         fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='lines+markers', name=y, line=dict(color=color)))
+        #     elif chart_type == 'bar':
+        #         fig.add_trace(go.Bar(x=df[x], y=df[y], name=y, marker=dict(color=color)))
+        #     elif chart_type == 'scatter':
+        #         fig.add_trace(go.Scatter(x=df[x], y=df[y], mode='markers', name=y, marker=dict(color=color)))
+        #     elif chart_type == 'area':
+        #         fig.add_trace(go.Scatter(x=df[x], y=df[y], fill='tozeroy', mode='lines', name=y, line=dict(color=color)))
+        #     elif chart_type == 'bubble':
+        #         fig.add_trace(go.Scatter(
+        #             x=df[x], y=df[y], mode='markers', name=y,
+        #             marker=dict(size=df[y], color=color, sizemode='area', sizeref=2.*max(df[y])/(40.**2), sizemin=4)
+        #         ))
+        #     elif chart_type == 'histogram':
+        #         fig.add_trace(go.Histogram(x=df[y], name=y, marker=dict(color=color)))
+        #     elif chart_type == 'box':
+        #         fig.add_trace(go.Box(y=df[y], name=y, marker=dict(color=color)))
+        #     elif chart_type == 'violin':
+        #         fig.add_trace(go.Violin(y=df[y], name=y, line=dict(color=color)))
+        #     elif chart_type == 'heatmap':
+        #         if len(ys) > 1 and x in df.columns:
+        #             fig.add_trace(go.Heatmap(z=df[ys].values, x=df[x], y=ys, colorscale='Viridis'))
+        #             break
+        #         else:
+        #             fig.add_trace(go.Heatmap(z=[df[y].values], x=df[x], y=[y], colorscale='Viridis'))
+        #     elif chart_type == 'pie':
+        #         fig = go.Figure(go.Pie(labels=df[x], values=df[y], marker=dict(colors=[color])))
+        #         break
+        #     elif chart_type == 'donut':
+        #         fig = go.Figure(go.Pie(labels=df[x], values=df[y], hole=0.4, marker=dict(colors=[color])))
+        #         break
+        #     elif chart_type == 'funnel':
+        #         fig = go.Figure(go.Funnel(y=df[x], x=df[y], marker=dict(color=color)))
+        #         break
+        #     elif chart_type == 'sunburst':
+        #         fig = go.Figure(go.Sunburst(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
+        #         break
+        #     elif chart_type == 'treemap':
+        #         fig = go.Figure(go.Treemap(labels=df[x], parents=[""]*len(df[x]), values=df[y]))
+        #         break
+        #     elif chart_type == 'polar':
+        #         fig.add_trace(go.Scatterpolar(r=df[y], theta=df[x], mode='lines+markers', name=y, line=dict(color=color)))
+        #     elif chart_type == 'scatter3d':
+        #         if len(ys) >= 3:
+        #             fig = go.Figure(go.Scatter3d(
+        #                 x=df[ys[0]], y=df[ys[1]], z=df[ys[2]],
+        #                 mode='markers', marker=dict(color=color), name="3D Scatter"
+        #             ))
+        #             break
+        #     elif chart_type == 'surface':
+        #         if len(ys) >= 3:
+        #             fig = go.Figure(go.Surface(
+        #                 z=df[ys[2]].values.reshape((len(df[ys[0]].unique()), len(df[ys[1]].unique()))),
+        #                 x=df[ys[0]].unique(), y=df[ys[1]].unique(), colorscale='Viridis'
+        #             ))
+        #             break
 
         app_data['graph'] = fig
         return fig
@@ -453,9 +518,10 @@ def register_callbacks(app):
         Output('publish-status', 'children'),
         Input('publish-btn', 'n_clicks'),
         State('dashboard-title', 'value'),
-        State('description', 'value')
+        State('description', 'value'),
+        State('chart-type', 'value'),
     )
-    def publish(n, title, desc):
+    def publish(n, title, desc, chart_type):
         if not n:
             return "❌ Geen actie uitgevoerd. Klik op de knop om te publiceren."
 
@@ -470,6 +536,9 @@ def register_callbacks(app):
         # Controleer of er een beschrijving is
         if not desc:
             return "❌ Beschrijving is verplicht om te publiceren."
+
+        if not chart_type:
+            return "❌ Kiez een visualisatietype."
 
         try:
             # Maak een record aan voor de grafiek
