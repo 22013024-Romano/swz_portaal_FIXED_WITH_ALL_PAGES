@@ -345,18 +345,30 @@ def register_callbacks(app):
         app_data["parameters"] = content["parameters"]
         x = app_data["parameters"]["x"]
         y = app_data["parameters"]["y"]
-        column_to_color = app_data["parameters"]["columnToColor"]
+        column_to_color = app_data["parameters"].get("columnToColor")
 
         options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
         return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color]
 
+
+    @app.callback(
+        Output('column-to-color', 'disabled'),
+        Input('chart-type', 'value'),
+        prevent_initial_call=True
+    )
+    def disable_color_dropdown(chart_type):
+        return chart_type == "scatter"
+
     @app.callback(
         Output('color-selectors', 'children'),
         Input('column-to-color', 'value'),
-        State('chart-type', 'value'),
+        Input('chart-type', 'value'),
     )
     def update_color_selectors(column_to_color, chart_type):
+        if chart_type == "scatter":
+            return "Geen kleur beschikbaar voor dit visualisatietype."
+
         if not column_to_color:
             return "❌ Selecteer de kolom die gekleurd moet worden."
 
@@ -451,6 +463,14 @@ def register_callbacks(app):
             fig = px.pie(df, values=x, names=y, color=column_to_color, color_discrete_sequence=select_colors)
         elif chart_type == "line":
             fig = px.line(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
+
+        elif chart_type == "scatter":
+            default_value = COLORS["Lintblauw"]["100%"]
+            if "colors" in app_data["parameters"]:
+                fig = px.scatter(df, x=x, y=y, color=app_data["parameters"]["colors"], color_discrete_map="identity")
+            else:
+                fig = px.scatter(df, x='x', y='y')
+                fig.update_traces(marker=dict(color=default_value,))
 
         # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
