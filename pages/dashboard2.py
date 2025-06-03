@@ -293,7 +293,7 @@ def register_callbacks(app):
                 return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
 
             # Combineer alle dataframes
-            combined_df = pd.concat(dfs, ignore_index=True).head(5) # TODO: remove .head call.
+            combined_df = pd.concat(dfs, ignore_index=True) #.head(5) # TODO: remove .head call.
 
             # Sla het gecombineerde dataframe op in app_data
             app_data['df'] = combined_df
@@ -349,23 +349,27 @@ def register_callbacks(app):
 
         options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
-        # return [f"Geselecteerd bestand: {filename}", graph, options, options, content["portalData"]["chartType"]]
         return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color]
 
     @app.callback(
         Output('color-selectors', 'children'),
-        Input('x-axis', 'value')
+        Input('column-to-color', 'value'),
+        State('chart-type', 'value'),
     )
-    def update_color_selectors(y_columns):
-        if not y_columns:
-            return "❌ Selecteer eerst Y-as kolommen."
+    def update_color_selectors(column_to_color, chart_type):
+        if not column_to_color:
+            return "❌ Selecteer de kolom die gekleurd moet worden."
 
         dropdowns = []
-        for col in range(0, app_data["parameters"]["length"]):
+        # Als de chart type "line" is, gebruik alleen unieke kolom waardes om te kleuren. Anders, gebruik de waarde in "parameters".
+        length = app_data['df'][column_to_color].unique().shape[0] if chart_type == "line" else app_data["parameters"]["length"]
+
+        for col in range(0, length):
             color_from_module = None
             if "colors" in app_data["parameters"]:
                 color_amount = len(app_data["parameters"]["colors"])
                 color_from_module = app_data["parameters"]["colors"][col % color_amount]
+
             options = []
             for color_name, shades in COLORS.items():
                 for shade, code in shades.items():
@@ -445,6 +449,8 @@ def register_callbacks(app):
             fig = px.bar(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
         elif chart_type == "pie":
             fig = px.pie(df, values=x, names=y, color=column_to_color, color_discrete_sequence=select_colors)
+        elif chart_type == "line":
+            fig = px.line(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
 
         # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
