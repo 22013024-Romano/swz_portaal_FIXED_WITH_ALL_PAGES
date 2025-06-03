@@ -361,11 +361,11 @@ def register_callbacks(app):
             return "❌ Selecteer eerst Y-as kolommen."
 
         dropdowns = []
-        # for col in y_columns:
         for col in range(0, app_data["parameters"]["length"]):
             color_from_module = None
             if "colors" in app_data["parameters"]:
-                color_from_module = app_data["parameters"]["colors"][col]
+                color_amount = len(app_data["parameters"]["colors"])
+                color_from_module = app_data["parameters"]["colors"][col % color_amount]
             options = []
             for color_name, shades in COLORS.items():
                 for shade, code in shades.items():
@@ -442,13 +442,9 @@ def register_callbacks(app):
             select_colors.append(color_code)
 
         if chart_type == 'bar':
-            fig = px.bar(
-                df,
-                x=x,
-                y=y,
-                color=column_to_color,
-                color_discrete_sequence=select_colors,
-            )
+            fig = px.bar(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
+        elif chart_type == "pie":
+            fig = px.pie(df, values=x, names=y, color=column_to_color, color_discrete_sequence=select_colors)
 
         # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
