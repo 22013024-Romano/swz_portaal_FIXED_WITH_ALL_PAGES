@@ -175,7 +175,7 @@ def layout(app):
                         "minWidth": "140px",
                         "marginRight": "12px"
                     }),
-                    dcc.Input(id='nbins', type="number", style={"justify-self": "flex-end", "width": "75%", "padding": "6px 12px", "border": "1px solid #ced4da", "borderRadius": "4px", "backgroundColor": "white", "fontSize": "14px", "height": "36px", "boxSizing": "border-box"})
+                    dcc.Input(id='nbins', type="number", style={"width": "75%", "padding": "6px 12px", "border": "1px solid #ced4da", "borderRadius": "4px", "backgroundColor": "white", "fontSize": "14px", "height": "36px", "boxSizing": "border-box"})
                 ], style={"display": "flex", "alignItems": "space-between", "marginBottom": "12px"}),
             ], style={"marginBottom": "18px"}),
 
@@ -304,7 +304,7 @@ def register_callbacks(app):
                 return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
 
             # Combineer alle dataframes
-            combined_df = pd.concat(dfs, ignore_index=True).head(5) # TODO: remove .head call.
+            combined_df = pd.concat(dfs, ignore_index=True)#.head(5) # TODO: remove .head call.
 
             # Sla het gecombineerde dataframe op in app_data
             app_data['df'] = combined_df
@@ -358,6 +358,7 @@ def register_callbacks(app):
         x = app_data["parameters"]["x"]
         y = app_data["parameters"].get("y")
         column_to_color = app_data["parameters"].get("columnToColor")
+        app_data['df'] = pd.DataFrame(app_data["parameters"]["dataframe"])
 
         nbins = 0
         if content["parameters"]["chartType"] == "histogram":
@@ -409,7 +410,7 @@ def register_callbacks(app):
         dropdowns = []
 
         length = 0
-        if chart_type == "line":
+        if chart_type == "line" or chart_type == "box":
             length = app_data['df'][column_to_color].unique().shape[0]
         elif chart_type == "scatter" or chart_type == "histogram":
             length = 1
@@ -507,7 +508,9 @@ def register_callbacks(app):
         elif chart_type == "scatter":
             fig = px.scatter(df, x=x, y=y, color_discrete_sequence=select_colors)
         elif chart_type == "histogram":
-            fig = px.histogram(df, x=x, nbins=nbins, color_discrete_sequence=select_colors)
+            fig = px.histogram(df, x=x, y=y, nbins=nbins, color_discrete_sequence=select_colors)
+        elif chart_type == "box":
+            fig = px.box(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
 
         # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
