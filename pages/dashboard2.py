@@ -35,6 +35,8 @@ COLOR_EMOJIS = {
     # Voeg meer toe indien gewenst
 }
 
+HEATMAP_COLORS = ["Viridis", "Plasma", "Inferno", "Magma", "Cividis", "Blues", "Greens", "YlGnBu", "YlOrRd", "RdBu", "Picnic", "Jet"]
+
 def layout(app):
     return html.Div([
         html.H2("📊 Dashboard", style={
@@ -179,6 +181,17 @@ def layout(app):
                 ], style={"display": "flex", "alignItems": "space-between", "marginBottom": "12px"}),
             ], style={"marginBottom": "18px"}),
 
+            html.Div(id="heatmap-value-section", children=[
+                html.Div([
+                    html.Label("waardekolom:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Dropdown(id='heatmap-dropdown', style={"width": "100%"})
+                ], style={"display": "flex", "alignItems": "space-between", "marginBottom": "12px"}),
+            ], style={"marginBottom": "18px"}),
+
             html.Div([
                 html.Div([
                     html.Label("Kleur toepassen:", style={
@@ -273,9 +286,11 @@ def register_callbacks(app):
         [Output('upload-output', 'children'),
          Output('x-axis', 'options'),
          Output('y-axis', 'options'),
-         Output('column-to-color', 'options'),],
+         Output('column-to-color', 'options'),
+         Output('heatmap-dropdown', 'options', allow_duplicate=True)],
         [Input('upload-data', 'contents')],
-        [State('upload-data', 'filename')]
+        [State('upload-data', 'filename')],
+        prevent_initial_call=True
     )
     def handle_upload(contents_list, filenames):
         if contents_list is None:
@@ -314,13 +329,15 @@ def register_callbacks(app):
                 "columns": list(combined_df.columns),
             }
 
+            dropdown_values = HEATMAP_COLORS
+
             # Genereer opties voor de dropdowns
             options = [{'label': col, 'value': col} for col in combined_df.columns]
-            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options
+            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, dropdown_values, options
 
         except Exception as e:
             # Foutafhandeling
-            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], []
+            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], [], []
 
     @app.callback(
         [Output('upload-export-output', 'children'),
@@ -333,13 +350,15 @@ def register_callbacks(app):
          Output('y-axis', 'value'),
          Output('column-to-color', 'value'),
          Output('nbins', 'value'),
+         Output('heatmap-dropdown', 'options'),
+         Output('heatmap-dropdown', 'value'),
         [Input('upload-export-data', 'contents')],
         [State('upload-export-data', 'filename')],
         prevent_initial_call=True
     )
     def handle_export_file_upload(content, filename):
         if not filename.lower().endswith('.json'):
-            return ["❌ Upload een JSON bestand.", None, [], [], [], None, None, None, None, 0]
+            return ["❌ Upload een JSON bestand.", None, [], [], [], None, None, None, None, 0, None, ""]
 
         _content_type, content_string = content.split(',')
         decoded = base64.b64decode(content_string)
@@ -366,7 +385,16 @@ def register_callbacks(app):
 
         options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
-        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins]
+        dropdown_values = []
+        value_column = None
+        if content["parameters"]["chartType"] == "heatmap":
+            dropdown_values = HEATMAP_COLORS
+            column_to_color = content["parameters"]["colorContinuousScale"]
+            value_column = content["parameters"]["valueColumn"]
+        else:
+            dropdown_values = options
+
+        return [f"✅ Geselecteerd bestand: {filename}", graph, dropdown_values, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins, options, value_column]
 
 
     @app.callback(
@@ -396,6 +424,16 @@ def register_callbacks(app):
             return {'display': 'none'}
 
     @app.callback(
+        Output('heatmap-value-section', 'style'),
+        Input('chart-type', 'value'),
+    )
+    def show_heatmap_value_section(chart_type):
+        if chart_type == "heatmap":
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+
+    @app.callback(
         Output('color-selectors', 'children'),
         Input('column-to-color', 'value'),
         Input('chart-type', 'value'),
@@ -406,6 +444,9 @@ def register_callbacks(app):
         
         if "parameters" not in app_data or "df" not in app_data:
             return "❌ Selecteer een dataset."
+
+        if chart_type == "heatmap":
+            return "Gebruik de waardekolom dropdown voor een kleur."
 
         dropdowns = []
 
@@ -486,8 +527,9 @@ def register_callbacks(app):
         State('chart-type', 'value'),
         State({'type': 'color-dropdown', 'index': ALL}, 'value'), # Haal kleuren op
         State('nbins', 'value'),
+        State('heatmap-dropdown', 'value'),
     )
-    def generate_chart(n, x, y, column_to_color, chart_type, colors, nbins):
+    def generate_chart(n, x, y, column_to_color, chart_type, colors, nbins, value_column):
         df = app_data.get('df')
         fig = go.Figure()
 
@@ -495,9 +537,12 @@ def register_callbacks(app):
             df = pd.DataFrame(app_data["parameters"]["dataframe"])
 
         select_colors = []
-        for color in colors:
-            color_code = COLOR_CODES[color]
-            select_colors.append(color_code)
+        if colors is not None:
+            for color in colors:
+                color_code = COLOR_CODES.get(color)
+                if color_code is None:
+                    continue
+                select_colors.append(color_code)
 
         if chart_type == 'bar':
             fig = px.bar(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
@@ -511,8 +556,14 @@ def register_callbacks(app):
             fig = px.histogram(df, x=x, y=y, nbins=nbins, color_discrete_sequence=select_colors)
         elif chart_type == "box":
             fig = px.box(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
+        elif chart_type == "heatmap":
+            heatmap_data = df.pivot(index=x, columns=y, values=value_column)
+            fig = px.imshow(
+                heatmap_data,
+                labels=dict(x=x, y=y, color=value_column),
+                color_continuous_scale=column_to_color,
+            )
 
-        # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
         #     naam_tint = colors[i] if i < len(colors) else None
         #     color = COLOR_CODES.get(naam_tint, "#000000")
