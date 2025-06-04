@@ -168,6 +168,17 @@ def layout(app):
                 ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
             ], style={"marginBottom": "18px"}),
 
+            html.Div(id="nbins-section", children=[
+                html.Div([
+                    html.Label("nbins:", style={
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "marginRight": "12px"
+                    }),
+                    dcc.Input(id='nbins', type="number", style={"justify-self": "flex-end", "width": "75%", "padding": "6px 12px", "border": "1px solid #ced4da", "borderRadius": "4px", "backgroundColor": "white", "fontSize": "14px", "height": "36px", "boxSizing": "border-box"})
+                ], style={"display": "flex", "alignItems": "space-between", "marginBottom": "12px"}),
+            ], style={"marginBottom": "18px"}),
+
             html.Div([
                 html.Div([
                     html.Label("Kleur toepassen:", style={
@@ -293,7 +304,7 @@ def register_callbacks(app):
                 return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
 
             # Combineer alle dataframes
-            combined_df = pd.concat(dfs, ignore_index=True) #.head(5) # TODO: remove .head call.
+            combined_df = pd.concat(dfs, ignore_index=True).head(5) # TODO: remove .head call.
 
             # Sla het gecombineerde dataframe op in app_data
             app_data['df'] = combined_df
@@ -321,13 +332,14 @@ def register_callbacks(app):
          Output('x-axis', 'value'),
          Output('y-axis', 'value'),
          Output('column-to-color', 'value'),
+         Output('nbins', 'value'),
         [Input('upload-export-data', 'contents')],
         [State('upload-export-data', 'filename')],
         prevent_initial_call=True
     )
     def handle_export_file_upload(content, filename):
         if not filename.lower().endswith('.json'):
-            return ["❌ Upload een JSON bestand.", None, [], [], None]
+            return ["❌ Upload een JSON bestand.", None, [], [], [], None, None, None, None, 0]
 
         _content_type, content_string = content.split(',')
         decoded = base64.b64decode(content_string)
@@ -344,12 +356,16 @@ def register_callbacks(app):
         app_data["graph"] = graph
         app_data["parameters"] = content["parameters"]
         x = app_data["parameters"]["x"]
-        y = app_data["parameters"]["y"]
+        y = app_data["parameters"].get("y")
         column_to_color = app_data["parameters"].get("columnToColor")
+
+        nbins = 0
+        if content["parameters"]["chartType"] == "histogram":
+            nbins = app_data["parameters"]["nbins"]
 
         options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
-        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color]
+        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins]
 
 
     @app.callback(
@@ -358,7 +374,25 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def disable_color_dropdown(chart_type):
-        return chart_type == "scatter"
+        return chart_type == "scatter" or chart_type == "histogram"
+
+    @app.callback(
+        Output('y-axis', 'disabled'),
+        Input('chart-type', 'value'),
+        prevent_initial_call=True
+    )
+    def disable_y_dropdown(chart_type):
+        return chart_type == "histogram"
+
+    @app.callback(
+        Output('nbins-section', 'style'),
+        Input('chart-type', 'value'),
+    )
+    def show_nbins_section(chart_type):
+        if chart_type == "histogram":
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
 
     @app.callback(
         Output('color-selectors', 'children'),
@@ -366,15 +400,21 @@ def register_callbacks(app):
         Input('chart-type', 'value'),
     )
     def update_color_selectors(column_to_color, chart_type):
-        if chart_type == "scatter":
-            return "Geen kleur beschikbaar voor dit visualisatietype."
-
-        if not column_to_color:
+        if not column_to_color and not chart_type == "scatter" and not chart_type == "histogram":
             return "❌ Selecteer de kolom die gekleurd moet worden."
+        
+        if "parameters" not in app_data or "df" not in app_data:
+            return "❌ Selecteer een dataset."
 
         dropdowns = []
-        # Als de chart type "line" is, gebruik alleen unieke kolom waardes om te kleuren. Anders, gebruik de waarde in "parameters".
-        length = app_data['df'][column_to_color].unique().shape[0] if chart_type == "line" else app_data["parameters"]["length"]
+
+        length = 0
+        if chart_type == "line":
+            length = app_data['df'][column_to_color].unique().shape[0]
+        elif chart_type == "scatter" or chart_type == "histogram":
+            length = 1
+        else:
+            length = app_data["parameters"]["length"]
 
         for col in range(0, length):
             color_from_module = None
@@ -443,14 +483,15 @@ def register_callbacks(app):
         State('y-axis', 'value'),
         State('column-to-color', 'value'),
         State('chart-type', 'value'),
-        State({'type': 'color-dropdown', 'index': ALL}, 'value')  # Haal kleuren op
+        State({'type': 'color-dropdown', 'index': ALL}, 'value'), # Haal kleuren op
+        State('nbins', 'value'),
     )
-    def generate_chart(n, x, y, column_to_color, chart_type, colors):
+    def generate_chart(n, x, y, column_to_color, chart_type, colors, nbins):
         df = app_data.get('df')
         fig = go.Figure()
 
         if "parameters" in app_data and "dataframe" in app_data["parameters"]:
-            df = app_data["parameters"]["dataframe"]
+            df = pd.DataFrame(app_data["parameters"]["dataframe"])
 
         select_colors = []
         for color in colors:
@@ -463,14 +504,10 @@ def register_callbacks(app):
             fig = px.pie(df, values=x, names=y, color=column_to_color, color_discrete_sequence=select_colors)
         elif chart_type == "line":
             fig = px.line(df, x=x, y=y, color=column_to_color, color_discrete_sequence=select_colors)
-
         elif chart_type == "scatter":
-            default_value = COLORS["Lintblauw"]["100%"]
-            if "colors" in app_data["parameters"]:
-                fig = px.scatter(df, x=x, y=y, color=app_data["parameters"]["colors"], color_discrete_map="identity")
-            else:
-                fig = px.scatter(df, x='x', y='y')
-                fig.update_traces(marker=dict(color=default_value,))
+            fig = px.scatter(df, x=x, y=y, color_discrete_sequence=select_colors)
+        elif chart_type == "histogram":
+            fig = px.histogram(df, x=x, nbins=nbins, color_discrete_sequence=select_colors)
 
         # TODO: add support for more visuals.
         # for i, y in enumerate(ys):
