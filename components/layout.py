@@ -135,9 +135,6 @@ def register_page_callbacks(app):
         # Toon de juiste pagina op basis van de URL
         if pathname == "/login":
             return login.layout(app)
-        elif pathname == "/dashboard2": # TODO: remove this when done.
-            import pages
-            return pages.dashboard2.layout(app)
         elif pathname == "/dashboard":
             if app_data.get("is_authenticated"):
                 return dashboard.layout(app)
