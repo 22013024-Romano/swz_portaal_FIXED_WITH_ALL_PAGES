@@ -286,9 +286,8 @@ def register_callbacks(app):
         [Output('upload-output', 'children'),
          Output('x-axis', 'options'),
          Output('y-axis', 'options'),
-         Output('column-to-color', 'options'),
          Output('heatmap-dropdown', 'options', allow_duplicate=True)],
-        [Input('upload-data', 'contents')],
+        [Input('upload-data', 'contents'),],
         [State('upload-data', 'filename')],
         prevent_initial_call=True
     )
@@ -329,20 +328,19 @@ def register_callbacks(app):
                 "columns": list(combined_df.columns),
             }
 
-            dropdown_values = HEATMAP_COLORS
-
             # Genereer opties voor de dropdowns
             options = [{'label': col, 'value': col} for col in combined_df.columns]
-            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, dropdown_values, options
+
+            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options
+
 
         except Exception as e:
             # Foutafhandeling
-            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], [], []
+            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], []
 
     @app.callback(
         [Output('upload-export-output', 'children'),
          Output('plot', 'figure', allow_duplicate=True),
-         Output('column-to-color', 'options', allow_duplicate=True),
          Output('x-axis', 'options', allow_duplicate=True),
          Output('y-axis', 'options', allow_duplicate=True),
          Output('chart-type', 'value', allow_duplicate=True)],
@@ -358,7 +356,7 @@ def register_callbacks(app):
     )
     def handle_export_file_upload(content, filename):
         if not filename.lower().endswith('.json'):
-            return ["❌ Upload een JSON bestand.", None, [], [], [], None, None, None, None, 0, None, ""]
+            return ["❌ Upload een JSON bestand.", None, [], [], "", None, None, None, 0, [], ""]
 
         _content_type, content_string = content.split(',')
         decoded = base64.b64decode(content_string)
@@ -385,16 +383,12 @@ def register_callbacks(app):
 
         options = [{'label': col, 'value': col} for col in content["parameters"]["columns"]]
 
-        dropdown_values = []
         value_column = None
         if content["parameters"]["chartType"] == "heatmap":
-            dropdown_values = HEATMAP_COLORS
             column_to_color = content["parameters"]["colorContinuousScale"]
             value_column = content["parameters"]["valueColumn"]
-        else:
-            dropdown_values = options
 
-        return [f"✅ Geselecteerd bestand: {filename}", graph, dropdown_values, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins, options, value_column]
+        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins, options, value_column]
 
 
     @app.callback(
@@ -412,6 +406,18 @@ def register_callbacks(app):
     )
     def disable_y_dropdown(chart_type):
         return chart_type == "histogram"
+
+    @app.callback(
+        Output('column-to-color', 'options', allow_duplicate=True),
+        Input('chart-type', 'value'),
+        Input('x-axis', 'options',),
+        prevent_initial_call=True
+    )
+    def set_correct_colors(chart_type, x_options):
+        if chart_type == "heatmap":
+            return HEATMAP_COLORS
+        else:
+            return x_options
 
     @app.callback(
         Output('nbins-section', 'style'),
