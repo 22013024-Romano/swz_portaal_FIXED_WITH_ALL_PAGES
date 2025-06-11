@@ -1,7 +1,7 @@
 # TODO: wanneer een nieuw bestand wordt geselecteerd, verwijder de oude data.
 
 import json
-from dash import html, dcc, Input, Output, State, ALL, MATCH, ctx
+from dash import html, dcc, Input, Output, State, ALL, MATCH, ctx, dash_table
 import base64
 import io
 import pandas as pd
@@ -79,7 +79,7 @@ def layout(app):
 
         # Upload bouwblok.
         html.Div([
-            html.H4("X. Upload json-export-bestanden fdsfdsfd", style={"marginBottom": "10px"}),
+            html.H4("2. Upload json-export-bestanden", style={"marginBottom": "10px"}),
             dcc.Upload(
                 id='upload-export-data',
                 children=html.Button('📤 Upload json-export-bestanden', style={
@@ -105,7 +105,7 @@ def layout(app):
         }),
 
         html.Div([
-            html.H4("X. Kies het visualisatietype", style={"marginBottom": "10px"}),
+            html.H4("3. Kies het visualisatietype", style={"marginBottom": "10px"}),
             html.Div([
                 html.Label("Chart type:", style={
                     "fontWeight": "bold",
@@ -146,9 +146,11 @@ def layout(app):
             "marginRight": "auto"
         }),
 
+        html.Div(id="table-section"),
+
         # Instellingen card
         html.Div(children=[
-            html.H4("2. Instellingen", style={"marginBottom": "18px"}),
+            html.H4("4. Instellingen", style={"marginBottom": "18px"}),
 
             html.Div([
                 html.Div([
@@ -313,14 +315,15 @@ def register_callbacks(app):
         [Output('upload-output', 'children'),
          Output('x-axis', 'options'),
          Output('y-axis', 'options'),
-         Output('heatmap-dropdown', 'options', allow_duplicate=True)],
+         Output('heatmap-dropdown', 'options', allow_duplicate=True),
+         Output('table-section', 'children'),],
         [Input('upload-data', 'contents'),],
         [State('upload-data', 'filename')],
         prevent_initial_call=True
     )
     def handle_upload(contents_list, filenames):
         if contents_list is None:
-            return "❌ Geen bestanden geüpload.", [], [], []
+            return "❌ Geen bestanden geüpload.", [], [], [], []
         try:
             dfs = []  # Lijst om dataframes op te slaan
             for contents, filename in zip(contents_list, filenames):
@@ -342,7 +345,7 @@ def register_callbacks(app):
                 dfs.append(df)  # Voeg het dataframe toe aan de lijst
 
             if not dfs:
-                return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], []
+                return "❌ Geen geldige CSV of Excel bestanden geüpload.", [], [], [], []
 
             # Combineer alle dataframes
             combined_df = pd.concat(dfs, ignore_index=True)#.head(5) # TODO: remove .head call.
@@ -358,12 +361,14 @@ def register_callbacks(app):
             # Genereer opties voor de dropdowns
             options = [{'label': col, 'value': col} for col in combined_df.columns]
 
-            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options
+            table = render_dataset_table(app_data['df'])
+
+            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options, table
 
 
         except Exception as e:
             # Foutafhandeling
-            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], []
+            return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], [], []
 
     @app.callback(
         Output("keywords-store", "data", allow_duplicate=True),
@@ -430,13 +435,14 @@ def register_callbacks(app):
          Output('nbins', 'value'),
          Output('heatmap-dropdown', 'options'),
          Output('heatmap-dropdown', 'value'),
+         Output('table-section', 'children', allow_duplicate=True),
         [Input('upload-export-data', 'contents')],
         [State('upload-export-data', 'filename')],
         prevent_initial_call=True
     )
     def handle_export_file_upload(content, filename):
         if not filename.lower().endswith('.json'):
-            return ["❌ Upload een JSON bestand.", None, [], [], "", None, None, None, 0, [], ""]
+            return ["❌ Upload een JSON bestand.", None, [], [], "", None, None, None, 0, [], "", []]
 
         _content_type, content_string = content.split(',')
         decoded = base64.b64decode(content_string)
@@ -457,6 +463,8 @@ def register_callbacks(app):
         column_to_color = app_data["parameters"].get("columnToColor")
         app_data['df'] = pd.DataFrame(app_data["parameters"]["dataframe"])
 
+        table = render_dataset_table(app_data['df'])
+
         nbins = 0
         if content["parameters"]["chartType"] == "histogram":
             nbins = app_data["parameters"]["nbins"]
@@ -468,8 +476,28 @@ def register_callbacks(app):
             column_to_color = content["parameters"]["colorContinuousScale"]
             value_column = content["parameters"]["valueColumn"]
 
-        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins, options, value_column]
+        return [f"✅ Geselecteerd bestand: {filename}", graph, options, options, content["parameters"]["chartType"], x, y, column_to_color, nbins, options, value_column, table]
 
+    def render_dataset_table(df):
+        table = dash_table.DataTable(df.head(5).to_dict('records'), [{"name": i, "id": i} for i in df.columns])
+
+        return [
+            html.Div(children=[
+                html.H4("Dataset", style={"marginBottom": "10px"}),
+                html.Div([
+                    table,
+                ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px", "overflow": "auto"}),
+            ], style={
+                "backgroundColor": "#f7f7f7",
+                "padding": "24px",
+                "borderRadius": "10px",
+                "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+                "marginBottom": "30px",
+                "maxWidth": "600px",
+                "marginLeft": "auto",
+                "marginRight": "auto"
+            }),
+        ]
 
     @app.callback(
         Output('column-to-color', 'disabled'),
