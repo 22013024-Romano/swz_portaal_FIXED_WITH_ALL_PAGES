@@ -77,10 +77,16 @@ def register_callbacks(app):
             # Zoekfunctionaliteit
             results = []
             for record in records:
+                if not search_state:
+                    results.append(record)
+                    continue
+
+                search_term = search_term.lower().strip()
+
                 if (
-                    not search_term
-                    or search_term.lower() in record.get("title", "").lower()
-                    or search_term.lower() in record.get("description", "").lower()
+                    search_term in record.get("title", "").lower()
+                    or search_term in record.get("description", "").lower()
+                    or search_term in record.get("keywords", [])
                 ):
                     results.append(record)
 
@@ -104,6 +110,7 @@ def register_callbacks(app):
                             id={'type': 'delete-button', 'index': rec['timestamp']},  # Gebruik timestamp als unieke index
                             style={
                                 "marginTop": "12px",
+                                "marginBottom": "10px",
                                 "backgroundColor": "#CA005D",
                                 "color": "white",
                                 "border": "none",
@@ -112,6 +119,20 @@ def register_callbacks(app):
                                 "fontWeight": "bold",
                                 "cursor": "pointer",
                                 "display": "block" if app_data['is_authenticated'] else "none"
+                            }
+                        ),
+
+                        html.Div(
+                            [
+                                html.Span(keyword, style={
+                                    "padding": "8px 12px",
+                                    "backgroundColor": "#CCE7F4", # Lichtblauw 45%.
+                                    "borderRadius": "20px",
+                                })
+                                    for keyword in rec.get("keywords", [])],
+                            style={
+                                "display": "flex",
+                                "gap": "5px",
                             }
                         )
                     ], style={

@@ -1,7 +1,7 @@
 # TODO: wanneer een nieuw bestand wordt geselecteerd, verwijder de oude data.
 
 import json
-from dash import html, dcc, Input, Output, State, ALL, MATCH
+from dash import html, dcc, Input, Output, State, ALL, MATCH, ctx
 import base64
 import io
 import pandas as pd
@@ -39,6 +39,8 @@ HEATMAP_COLORS = ["Viridis", "Plasma", "Inferno", "Magma", "Cividis", "Blues", "
 
 def layout(app):
     return html.Div([
+        dcc.Store(id="keywords-store", data=[]),
+
         html.H2("📊 Dashboard", style={
             "textAlign": "center",
             "marginBottom": "30px",
@@ -220,6 +222,31 @@ def layout(app):
 
             html.Label("Toelichting:", style={"fontWeight": "bold"}),
             dcc.Textarea(id='description', style={'width': '100%', 'height': 80, "marginBottom": "18px"}),
+
+            html.Label("Keywords:", style={"fontWeight": "bold"}),
+            html.Div([
+                dcc.Input(
+                    id="keyword-input",
+                    type="text",
+                    placeholder="Enter a keyword...",
+                    debounce=True,
+                    style={"padding": "8px", "width": "300px"}
+                ),
+                html.Button("Add", id="add-keyword-button", n_clicks=0, style={
+                    "backgroundColor": "#CA005D",
+                    "color": "white",
+                    "border": "none",
+                    "borderRadius": "5px",
+                    "padding": "10px 30px",
+                    "fontWeight": "bold",
+                    "fontSize": "1rem",
+                    "cursor": "pointer",
+                    "marginBottom": "20px",
+                    "marginLeft": "10px",
+                })
+            ], style={"marginBottom": "20px"}),
+
+    html.Div(id="keywords-container", children=[], style={"display": "flex", "flexWrap": "wrap", "gap": "8px"})
         ], style={
             "backgroundColor": "#f7f7f7",
             "padding": "24px",
@@ -337,6 +364,59 @@ def register_callbacks(app):
         except Exception as e:
             # Foutafhandeling
             return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], []
+
+    @app.callback(
+        Output("keywords-store", "data", allow_duplicate=True),
+        Input("add-keyword-button", "n_clicks"),
+        Input({"type": "remove-keyword", "index": ALL}, "n_clicks"),
+        State("keywords-store", "data"),
+        State("keyword-input", "value"),
+        prevent_initial_call=True
+    )
+    def manage_keywords(add_clicks, remove_clicks, current_keywords, new_keyword):
+        triggered_id = ctx.triggered_id
+        if not current_keywords:
+            current_keywords = []
+
+        if isinstance(triggered_id, dict) and triggered_id.get("type") == "remove-keyword":
+            keyword_to_remove = triggered_id.get("index")
+            return [keyword for keyword in current_keywords if keyword != keyword_to_remove]
+
+        if new_keyword:
+            new_keyword = new_keyword.lower()
+            clean_kw = new_keyword.strip()
+            if clean_kw and clean_kw not in [keyword for keyword in current_keywords]:
+                current_keywords.append(clean_kw)
+
+        return current_keywords
+
+    @app.callback(
+        Output("keywords-container", "children"),
+        Input("keywords-store", "data"),
+    )
+    def render_keywords(keywords):
+        tags = []
+        for keyword in keywords:
+            tag = html.Div([
+                html.Span(keyword, style={"margin": "0 6px"}),
+                html.Button("❌", id={"type": "remove-keyword", "index": keyword},
+                            n_clicks=0, style={
+                                "border": "none",
+                                "background": "transparent",
+                                "cursor": "pointer",
+                                "margin": "0 4px 0 0",
+                                "padding": "0",
+                            })
+            ], style={
+                "padding": "8px 10px",
+                "backgroundColor": "#CCE7F4", # Lichtblauw 45%.
+                "borderRadius": "20px",
+                "display": "flex",
+                "alignItems": "center"
+            })
+            tags.append(tag)
+
+        return tags
 
     @app.callback(
         [Output('upload-export-output', 'children'),
@@ -639,8 +719,9 @@ def register_callbacks(app):
         State('dashboard-title', 'value'),
         State('description', 'value'),
         State('chart-type', 'value'),
+        State("keywords-store", "data"),
     )
-    def publish(n, title, desc, chart_type):
+    def publish(n, title, desc, chart_type, keywords):
         if not n:
             return "❌ Geen actie uitgevoerd. Klik op de knop om te publiceren."
 
@@ -680,6 +761,7 @@ def register_callbacks(app):
                 "description": desc,
                 "user": app_data.get("current_user", "Onbekend"),
                 "timestamp": datetime.now().strftime("%Y-%m-%d"),
+                "keywords": keywords,
                 "figure": figure_json
             }
 
