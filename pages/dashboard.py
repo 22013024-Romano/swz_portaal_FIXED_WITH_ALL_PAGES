@@ -51,10 +51,10 @@ def layout(app):
 
         # Upload card
         html.Div([
-            html.H4("1. Upload je CSV-bestanden", style={"marginBottom": "10px"}),
+            html.H4("1. Upload je excel- of CSV-bestanden", style={"marginBottom": "10px"}),
             dcc.Upload(
                 id='upload-data',
-                children=html.Button('📤 Upload CSV-bestanden', style={
+                children=html.Button('📤 Upload een bestand', style={
                     "backgroundColor": "#CA005D",
                     "color": "white",
                     "border": "none",
@@ -79,10 +79,10 @@ def layout(app):
 
         # Upload bouwblok.
         html.Div([
-            html.H4("2. Upload json-export-bestanden", style={"marginBottom": "10px"}),
+            html.H4("Of upload een json-bestanden", style={"marginBottom": "10px"}),
             dcc.Upload(
                 id='upload-export-data',
-                children=html.Button('📤 Upload json-export-bestanden', style={
+                children=html.Button('📤 Upload een json-bestand', style={
                     "backgroundColor": "#CA005D",
                     "color": "white",
                     "border": "none",
@@ -105,7 +105,7 @@ def layout(app):
         }),
 
         html.Div([
-            html.H4("3. Kies het visualisatietype", style={"marginBottom": "10px"}),
+            html.H4("2. Kies het visualisatietype", style={"marginBottom": "10px"}),
             html.Div([
                 html.Label("Chart type:", style={
                     "fontWeight": "bold",
@@ -150,7 +150,7 @@ def layout(app):
 
         # Instellingen card
         html.Div(children=[
-            html.H4("4. Instellingen", style={"marginBottom": "18px"}),
+            html.H4("3. Instellingen", style={"marginBottom": "18px"}),
 
             html.Div([
                 html.Div([
