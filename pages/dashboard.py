@@ -1,5 +1,3 @@
-# TODO: wanneer een nieuw bestand wordt geselecteerd, verwijder de oude data.
-
 import json
 from dash import html, dcc, Input, Output, State, ALL, MATCH, ctx, dash_table
 import base64
@@ -93,6 +91,30 @@ def layout(app):
                 }),
             ),
             html.Div(id='upload-export-output', style={"marginTop": "10px", "color": "#333"})
+        ], style={
+            "backgroundColor": "#f7f7f7",
+            "padding": "24px",
+            "borderRadius": "10px",
+            "boxShadow": "0 2px 8px rgba(0,0,0,0.07)",
+            "marginBottom": "30px",
+            "maxWidth": "600px",
+            "marginLeft": "auto",
+            "marginRight": "auto"
+        }),
+
+        html.Div([
+            html.H4("Verwijder de bestanden", style={"marginBottom": "10px"}),
+            html.Button('Verwijder',
+                id='delete-file',
+                style={
+                "backgroundColor": "#CA005D",
+                "color": "white",
+                "border": "none",
+                "borderRadius": "5px",
+                "padding": "10px 20px",
+                "fontWeight": "bold",
+                "cursor": "pointer"
+            }),
         ], style={
             "backgroundColor": "#f7f7f7",
             "padding": "24px",
@@ -363,7 +385,7 @@ def register_callbacks(app):
 
             table = render_dataset_table(app_data['df'])
 
-            return f"✅ {len(dfs)} bestand(en) succesvol geüpload en gecombineerd.", options, options, options, table
+            return f"✅ Geselecteerd bestand: {filenames[0]}", options, options, options, table
 
 
         except Exception as e:
@@ -371,12 +393,20 @@ def register_callbacks(app):
             return f"❌ Fout bij het verwerken van de bestanden: {e}", [], [], [], []
 
     @app.callback(
+        Output('upload-data', 'contents'),
+        Output('upload-export-data', 'contents'),
+        Input("delete-file", "n_clicks"),
+    )
+    def delete_files(n_clicks):
+        return [None, None]
+
+    @app.callback(
         Output("keywords-store", "data", allow_duplicate=True),
         Input("add-keyword-button", "n_clicks"),
         Input({"type": "remove-keyword", "index": ALL}, "n_clicks"),
         State("keywords-store", "data"),
         State("keyword-input", "value"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def manage_keywords(add_clicks, remove_clicks, current_keywords, new_keyword):
         triggered_id = ctx.triggered_id
@@ -441,7 +471,7 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def handle_export_file_upload(content, filename):
-        if not filename.lower().endswith('.json'):
+        if filename is None or content is None or not filename.lower().endswith('.json'):
             return ["❌ Upload een JSON bestand.", None, [], [], "", None, None, None, 0, [], "", []]
 
         _content_type, content_string = content.split(',')
