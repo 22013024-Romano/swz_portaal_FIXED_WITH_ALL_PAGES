@@ -3,14 +3,22 @@ from dash import dcc, html, Input, Output
 
 
 def layout(app):
-    return html.Div([
+    return html.Div(
+        style={
+            "display": "flex",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "height": "100vh",
+            "backgroundColor": "#f9f9f9",
+            "fontFamily": "Arial, sans-serif",
+        },
+        children=[
         html.P(id="foo")
     ])
 
 def register_callbacks(app):
     @app.callback(
         Output("foo", "children"),
-        # Output("product-graph", "figure"),
         Input("url", "search"),
     )
     def display_graph(search):
