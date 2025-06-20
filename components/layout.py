@@ -1,5 +1,5 @@
 from dash import html, dcc, Input, Output
-from pages import login, dashboard, gallery
+from pages import login, dashboard, gallery, grafiek
 from app_data import app_data
 import dash
 
@@ -139,6 +139,8 @@ def register_page_callbacks(app):
             if app_data.get("is_authenticated"):
                 return dashboard.layout(app)
             return login.layout(app)
+        elif pathname == "/grafiek":
+            return grafiek.layout(app)
         # Standaard naar de galerijpagina
         return gallery.layout(app)
 

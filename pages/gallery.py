@@ -98,12 +98,12 @@ def register_callbacks(app):
             return html.Div([
                 html.Div([
                     html.Div([
-                        html.H4(rec['title'], style={"marginBottom": "8px", "color": "#CA005D"}),
+                        dcc.Link(rec['title'], href=f"/grafiek?id={rec["id"]}", style={"color": "#CA005D", "textDecoration": "none", "fontWeight": "bold"}),
                         html.P(f"Beschrijving: {rec['description']}", style={"marginBottom": "8px"}),
                         html.Small(f"Gebruiker: {rec['user']} – Datum: {rec['timestamp']}", style={"color": "#888"}),
                         dcc.Graph(
                             figure=go.Figure(rec['figure']),
-                            config={"displayModeBar": True},
+                            config={"displayModeBar": 'hover', "displaylogo": False},
                             style={"height": "320px", "marginTop": "10px"}
                         ),
                         html.Button(

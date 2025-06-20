@@ -31,7 +31,6 @@ COLOR_EMOJIS = {
     "Paars": "🟪",
     "Zwart": "⬛",
     "Grijs": "⬜",
-    # Voeg meer toe indien gewenst
 }
 
 HEATMAP_COLORS = ["Viridis", "Plasma", "Inferno", "Magma", "Cividis", "Blues", "Greens", "YlGnBu", "YlOrRd", "RdBu", "Picnic", "Jet"]
