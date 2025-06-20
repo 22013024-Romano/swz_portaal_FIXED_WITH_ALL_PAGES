@@ -67,7 +67,8 @@ def register_callbacks(app):
                         if btn_id.get('type') == 'delete-button':
                             # Vind het record met deze unieke timestamp
                             delete_timestamp = btn_id.get('index')
-                            records = [rec for rec in records if rec.get('timestamp') != delete_timestamp]
+                            records = [rec for rec in records if rec.get('id') != delete_timestamp]
+
                             # Schrijf terug
                             with open(path, "w") as f:
                                 for record in records:
@@ -107,7 +108,7 @@ def register_callbacks(app):
                         ),
                         html.Button(
                             "Verwijderen",
-                            id={'type': 'delete-button', 'index': rec['timestamp']},  # Gebruik timestamp als unieke index
+                            id={'type': 'delete-button', 'index': rec['id']},  # Gebruik de id als unieke index
                             style={
                                 "marginTop": "12px",
                                 "marginBottom": "10px",

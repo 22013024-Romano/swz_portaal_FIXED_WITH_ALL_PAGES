@@ -9,6 +9,7 @@ from app_data import app_data
 from datetime import datetime
 import os
 import numpy as np
+from uuid import uuid4
 
 # Laad de kleuren en tinten uit het JSON-bestand
 with open("data/colors.json", "r") as f:
@@ -815,12 +816,13 @@ def register_callbacks(app):
             figure_json = json.loads(json.dumps(figure_json, default=convert_ndarray))
 
             record = {
+                "id": str(uuid4()),
                 "title": title,
                 "description": desc,
                 "user": app_data.get("current_user", "Onbekend"),
-                "timestamp": datetime.now().strftime("%Y-%m-%d"),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 "keywords": keywords,
-                "figure": figure_json
+                "figure": figure_json,
             }
 
             # Controleer of de opslagmap bestaat
