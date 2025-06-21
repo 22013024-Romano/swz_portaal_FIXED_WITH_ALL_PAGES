@@ -819,7 +819,7 @@ def register_callbacks(app):
                 "title": title,
                 "description": desc,
                 "user": app_data.get("current_user", "Onbekend"),
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                "timestamp": datetime.now().strftime("%Y-%m-%d"),
                 "keywords": keywords,
                 "figure": figure_json,
             }
