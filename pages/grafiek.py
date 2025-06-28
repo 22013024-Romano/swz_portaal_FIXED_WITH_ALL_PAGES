@@ -57,7 +57,7 @@ def register_callbacks(app):
                         dcc.Graph(
                             figure=go.Figure(graph['figure']),
                             config={"displayModeBar": 'hover', "displaylogo": False},
-                            style={"height": "640px", "marginTop": "10px"}
+                            style={"height": "480px", "marginTop": "10px"}
                         ),
                         html.Div(
                             [
