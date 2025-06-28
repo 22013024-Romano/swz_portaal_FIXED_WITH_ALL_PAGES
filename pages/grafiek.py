@@ -15,12 +15,12 @@ def layout(app):
             "fontFamily": "Arial, sans-serif",
         },
         children=[
-        html.P(id="foo")
+        html.P(id="message")
     ])
 
 def register_callbacks(app):
     @app.callback(
-        Output("foo", "children"),
+        Output("message", "children"),
         Input("url", "search"),
     )
     def display_graph(search):
@@ -39,7 +39,7 @@ def register_callbacks(app):
 
             graph = None
 
-            # Find de juiste grafiek
+            # Vind de juiste grafiek
             with open(path, "r") as f:
                 records = [json.loads(line) for line in f]
                 for record in records:
