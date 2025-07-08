@@ -6,6 +6,7 @@ from dash.dependencies import Output, Input
 from pages.login import register_callbacks as register_login_callbacks
 from pages.dashboard import register_callbacks as register_dashboard_callbacks
 from pages.gallery import register_callbacks as register_gallery_callbacks
+from pages.grafiek import register_callbacks as register_grafiek_callbacks
 from app_data import app_data
 
 
@@ -19,6 +20,7 @@ register_page_callbacks(app)
 register_login_callbacks(app)
 register_dashboard_callbacks(app)
 register_gallery_callbacks(app)
+register_grafiek_callbacks(app)
 
 @app.callback(
     Output('url', 'pathname'),

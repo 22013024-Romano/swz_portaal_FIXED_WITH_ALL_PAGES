@@ -67,7 +67,8 @@ def register_callbacks(app):
                         if btn_id.get('type') == 'delete-button':
                             # Vind het record met deze unieke timestamp
                             delete_timestamp = btn_id.get('index')
-                            records = [rec for rec in records if rec.get('timestamp') != delete_timestamp]
+                            records = [rec for rec in records if rec.get('id') != delete_timestamp]
+
                             # Schrijf terug
                             with open(path, "w") as f:
                                 for record in records:
@@ -77,10 +78,16 @@ def register_callbacks(app):
             # Zoekfunctionaliteit
             results = []
             for record in records:
+                if not search_state:
+                    results.append(record)
+                    continue
+
+                search_term = search_term.lower().strip()
+
                 if (
-                    not search_term
-                    or search_term.lower() in record.get("title", "").lower()
-                    or search_term.lower() in record.get("description", "").lower()
+                    search_term in record.get("title", "").lower()
+                    or search_term in record.get("description", "").lower()
+                    or search_term in record.get("keywords", [])
                 ):
                     results.append(record)
 
@@ -91,19 +98,20 @@ def register_callbacks(app):
             return html.Div([
                 html.Div([
                     html.Div([
-                        html.H4(rec['title'], style={"marginBottom": "8px", "color": "#CA005D"}),
+                        dcc.Link(rec['title'], href=f"/grafiek?id={rec["id"]}", style={"color": "#CA005D", "textDecoration": "none", "fontWeight": "bold"}),
                         html.P(f"Beschrijving: {rec['description']}", style={"marginBottom": "8px"}),
                         html.Small(f"Gebruiker: {rec['user']} – Datum: {rec['timestamp']}", style={"color": "#888"}),
                         dcc.Graph(
                             figure=go.Figure(rec['figure']),
-                            config={"displayModeBar": True},
+                            config={"displayModeBar": 'hover', "displaylogo": False},
                             style={"height": "320px", "marginTop": "10px"}
                         ),
                         html.Button(
                             "Verwijderen",
-                            id={'type': 'delete-button', 'index': rec['timestamp']},  # Gebruik timestamp als unieke index
+                            id={'type': 'delete-button', 'index': rec['id']},  # Gebruik de id als unieke index
                             style={
                                 "marginTop": "12px",
+                                "marginBottom": "10px",
                                 "backgroundColor": "#CA005D",
                                 "color": "white",
                                 "border": "none",
@@ -112,6 +120,20 @@ def register_callbacks(app):
                                 "fontWeight": "bold",
                                 "cursor": "pointer",
                                 "display": "block" if app_data['is_authenticated'] else "none"
+                            }
+                        ),
+
+                        html.Div(
+                            [
+                                html.Span(keyword, style={
+                                    "padding": "8px 12px",
+                                    "backgroundColor": "#CCE7F4", # Lichtblauw 45%.
+                                    "borderRadius": "20px",
+                                })
+                                    for keyword in rec.get("keywords", [])],
+                            style={
+                                "display": "flex",
+                                "gap": "5px",
                             }
                         )
                     ], style={
